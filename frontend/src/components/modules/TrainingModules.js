@@ -1,5 +1,8 @@
 import React from 'react';
+import { useNavigate } from 'react-router-dom';
+import { Lock } from 'lucide-react';
 import { useGame } from '../../contexts/GameContext';
+import { useProAccess } from '../../hooks/useProAccess';
 
 const MODULES = [
   {
@@ -17,6 +20,7 @@ const MODULES = [
       </svg>
     ),
     buttonText: "Début de l'exercice",
+    pro: false,
   },
   {
     id: 'true-count',
@@ -35,6 +39,7 @@ const MODULES = [
       </svg>
     ),
     buttonText: "Début de l'exercice",
+    pro: true,
   },
   {
     id: 'basic-strategy',
@@ -55,6 +60,7 @@ const MODULES = [
       </svg>
     ),
     buttonText: "Début de l'exercice",
+    pro: false,
   },
   {
     id: 'deviations',
@@ -73,6 +79,7 @@ const MODULES = [
       </svg>
     ),
     buttonText: "Début de l'exercice",
+    pro: true,
   },
   {
     id: 'in-casino',
@@ -93,90 +100,120 @@ const MODULES = [
       </svg>
     ),
     buttonText: 'Entrer dans le casino',
+    pro: true,
   },
 ];
 
 export default function TrainingModules() {
   const { setShowModal } = useGame();
+  const navigate = useNavigate();
+  const isPro = useProAccess();
 
   const regular = MODULES.filter(m => !m.wide);
   const wide    = MODULES.filter(m => m.wide);
 
-  const Card = ({ m }) => (
-    <div
-      style={{
-        background: '#111',
-        border: `1px solid ${m.accentBorder}`,
-        borderRadius: 16,
-        overflow: 'hidden',
-        display: 'flex',
-        flexDirection: 'column',
-        transition: 'border-color .2s, box-shadow .2s',
-      }}
-      onMouseEnter={e => {
-        e.currentTarget.style.borderColor = m.accent;
-        e.currentTarget.style.boxShadow = `0 0 24px ${m.accentBg}`;
-      }}
-      onMouseLeave={e => {
-        e.currentTarget.style.borderColor = m.accentBorder;
-        e.currentTarget.style.boxShadow = 'none';
-      }}
-    >
-      {/* Corps */}
-      <div style={{ padding: '20px 20px 16px', flex: 1 }}>
-        {/* Icône + badge */}
-        <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: 14 }}>
-          <div style={{
-            width: 56, height: 56, background: m.accentBg,
-            borderRadius: 12, display: 'flex', alignItems: 'center', justifyContent: 'center',
-            border: `1px solid ${m.accentBorder}`,
-          }}>
-            {m.icon}
+  const handleClick = (m) => {
+    if (m.pro && !isPro) { navigate('/pricing'); return; }
+    setShowModal(m.id);
+  };
+
+  const Card = ({ m }) => {
+    const locked = m.pro && !isPro;
+    return (
+      <div
+        style={{
+          background: '#111',
+          border: `1px solid ${locked ? 'rgba(255,255,255,0.06)' : m.accentBorder}`,
+          borderRadius: 16,
+          overflow: 'hidden',
+          display: 'flex',
+          flexDirection: 'column',
+          transition: 'border-color .2s, box-shadow .2s',
+          position: 'relative',
+          opacity: locked ? 0.7 : 1,
+        }}
+        onMouseEnter={e => {
+          e.currentTarget.style.borderColor = locked ? 'rgba(201,168,76,0.4)' : m.accent;
+          e.currentTarget.style.boxShadow = locked ? '0 0 24px rgba(201,168,76,0.06)' : `0 0 24px ${m.accentBg}`;
+        }}
+        onMouseLeave={e => {
+          e.currentTarget.style.borderColor = locked ? 'rgba(255,255,255,0.06)' : m.accentBorder;
+          e.currentTarget.style.boxShadow = 'none';
+        }}
+      >
+        {/* Corps */}
+        <div style={{ padding: '20px 20px 16px', flex: 1, filter: locked ? 'blur(1px)' : 'none', pointerEvents: locked ? 'none' : 'auto' }}>
+          {/* Icône + badge */}
+          <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: 14 }}>
+            <div style={{
+              width: 56, height: 56, background: m.accentBg,
+              borderRadius: 12, display: 'flex', alignItems: 'center', justifyContent: 'center',
+              border: `1px solid ${m.accentBorder}`,
+            }}>
+              {m.icon}
+            </div>
+            <span style={{
+              fontSize: 10, fontWeight: 700, letterSpacing: 1,
+              textTransform: 'uppercase', color: m.accent,
+              background: m.accentBg, border: `1px solid ${m.accentBorder}`,
+              borderRadius: 6, padding: '3px 8px',
+            }}>
+              {m.sub.split(' · ')[0]}
+            </span>
           </div>
-          <span style={{
-            fontSize: 10, fontWeight: 700, letterSpacing: 1,
-            textTransform: 'uppercase', color: m.accent,
-            background: m.accentBg, border: `1px solid ${m.accentBorder}`,
-            borderRadius: 6, padding: '3px 8px',
-          }}>
-            {m.sub.split(' · ')[0]}
-          </span>
+
+          <h3 style={{ color: '#fff', fontSize: 17, fontWeight: 800, margin: '0 0 5px', letterSpacing: -0.3 }}>
+            {m.name}
+          </h3>
+          <p style={{ color: '#444', fontSize: 11, fontWeight: 600, margin: '0 0 10px', letterSpacing: 0.5 }}>
+            {m.sub}
+          </p>
+          <p style={{ color: '#666', fontSize: 12, lineHeight: 1.6, margin: 0 }}>
+            {m.desc}
+          </p>
         </div>
 
-        {/* Nom */}
-        <h3 style={{ color: '#fff', fontSize: 17, fontWeight: 800, margin: '0 0 5px', letterSpacing: -0.3 }}>
-          {m.name}
-        </h3>
+        {/* Overlay verrou */}
+        {locked && (
+          <div
+            onClick={() => navigate('/pricing')}
+            style={{
+              position: 'absolute', inset: 0,
+              display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
+              gap: 8, cursor: 'pointer',
+              background: 'rgba(10,10,10,0.55)',
+              backdropFilter: 'blur(2px)',
+            }}
+          >
+            <div style={{ width: 44, height: 44, borderRadius: '50%', background: 'rgba(201,168,76,0.15)', border: '1px solid rgba(201,168,76,0.4)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+              <Lock size={18} color="#c9a84c" />
+            </div>
+            <span style={{ color: '#c9a84c', fontSize: 12, fontWeight: 800, letterSpacing: 0.5 }}>Pro</span>
+            <span style={{ color: '#666', fontSize: 11 }}>Débloquer →</span>
+          </div>
+        )}
 
-        {/* Sous-titre */}
-        <p style={{ color: '#444', fontSize: 11, fontWeight: 600, margin: '0 0 10px', letterSpacing: 0.5 }}>
-          {m.sub}
-        </p>
-
-        {/* Description */}
-        <p style={{ color: '#666', fontSize: 12, lineHeight: 1.6, margin: 0 }}>
-          {m.desc}
-        </p>
+        {/* Bouton */}
+        <button
+          onClick={() => handleClick(m)}
+          style={{
+            width: '100%', padding: '13px 20px',
+            background: locked ? 'rgba(201,168,76,0.08)' : m.accentBg,
+            border: 'none',
+            borderTop: `1px solid ${locked ? 'rgba(201,168,76,0.15)' : m.accentBorder}`,
+            color: locked ? '#c9a84c' : m.accent,
+            fontSize: 13, fontWeight: 700,
+            cursor: 'pointer', letterSpacing: 0.3,
+            transition: 'background .15s',
+          }}
+          onMouseEnter={e => e.currentTarget.style.background = locked ? 'rgba(201,168,76,0.15)' : m.accentBorder}
+          onMouseLeave={e => e.currentTarget.style.background = locked ? 'rgba(201,168,76,0.08)' : m.accentBg}
+        >
+          {locked ? '🔒 Passer à Pro →' : `${m.buttonText} →`}
+        </button>
       </div>
-
-      {/* Bouton */}
-      <button
-        onClick={() => setShowModal(m.id)}
-        style={{
-          width: '100%', padding: '13px 20px',
-          background: m.accentBg, border: 'none',
-          borderTop: `1px solid ${m.accentBorder}`,
-          color: m.accent, fontSize: 13, fontWeight: 700,
-          cursor: 'pointer', letterSpacing: 0.3,
-          transition: 'background .15s',
-        }}
-        onMouseEnter={e => e.currentTarget.style.background = m.accentBorder}
-        onMouseLeave={e => e.currentTarget.style.background = m.accentBg}
-      >
-        {m.buttonText} →
-      </button>
-    </div>
-  );
+    );
+  };
 
   return (
     <div>
@@ -191,29 +228,33 @@ export default function TrainingModules() {
       </div>
 
       {/* Simulation Casino — pleine largeur */}
-      {wide.map(m => (
+      {wide.map(m => {
+        const locked = m.pro && !isPro;
+        return (
         <div key={m.id} style={{
           background: '#111',
-          border: `1px solid ${m.accentBorder}`,
+          border: `1px solid ${locked ? 'rgba(201,168,76,0.2)' : m.accentBorder}`,
           borderRadius: 16,
           overflow: 'hidden',
           display: 'flex',
           alignItems: 'stretch',
           transition: 'border-color .2s, box-shadow .2s',
+          position: 'relative',
+          opacity: locked ? 0.75 : 1,
         }}
         onMouseEnter={e => {
-          e.currentTarget.style.borderColor = m.accent;
-          e.currentTarget.style.boxShadow = `0 0 32px rgba(248,113,113,0.1)`;
+          e.currentTarget.style.borderColor = locked ? 'rgba(201,168,76,0.5)' : m.accent;
+          e.currentTarget.style.boxShadow = locked ? '0 0 32px rgba(201,168,76,0.07)' : `0 0 32px rgba(248,113,113,0.1)`;
         }}
         onMouseLeave={e => {
-          e.currentTarget.style.borderColor = m.accentBorder;
+          e.currentTarget.style.borderColor = locked ? 'rgba(201,168,76,0.2)' : m.accentBorder;
           e.currentTarget.style.boxShadow = 'none';
         }}>
           {/* Bande accent gauche */}
-          <div style={{ width: 4, background: `linear-gradient(to bottom, ${m.accent}, transparent)`, flexShrink: 0 }} />
+          <div style={{ width: 4, background: `linear-gradient(to bottom, ${locked ? '#c9a84c' : m.accent}, transparent)`, flexShrink: 0 }} />
 
           {/* Contenu */}
-          <div style={{ padding: '20px 24px', flex: 1, display: 'flex', alignItems: 'center', gap: 20 }}>
+          <div style={{ padding: '20px 24px', flex: 1, display: 'flex', alignItems: 'center', gap: 20, filter: locked ? 'blur(1px)' : 'none', pointerEvents: locked ? 'none' : 'auto' }}>
             <div style={{
               width: 60, height: 60, background: m.accentBg,
               borderRadius: 14, display: 'flex', alignItems: 'center', justifyContent: 'center',
@@ -237,23 +278,49 @@ export default function TrainingModules() {
             </div>
           </div>
 
+          {/* Overlay verrou casino */}
+          {locked && (
+            <div
+              onClick={() => navigate('/pricing')}
+              style={{
+                position: 'absolute', inset: 0,
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                gap: 12, cursor: 'pointer',
+                background: 'rgba(10,10,10,0.5)',
+                backdropFilter: 'blur(2px)',
+              }}
+            >
+              <div style={{ width: 40, height: 40, borderRadius: '50%', background: 'rgba(201,168,76,0.15)', border: '1px solid rgba(201,168,76,0.4)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                <Lock size={16} color="#c9a84c" />
+              </div>
+              <div>
+                <div style={{ color: '#c9a84c', fontSize: 13, fontWeight: 800 }}>Fonctionnalité Pro</div>
+                <div style={{ color: '#666', fontSize: 11 }}>Cliquer pour débloquer →</div>
+              </div>
+            </div>
+          )}
+
           {/* Bouton côté droit */}
           <button
-            onClick={() => setShowModal(m.id)}
+            onClick={() => handleClick(m)}
             style={{
-              padding: '0 28px', background: m.accentBg,
-              border: 'none', borderLeft: `1px solid ${m.accentBorder}`,
-              color: m.accent, fontSize: 13, fontWeight: 700,
+              padding: '0 28px',
+              background: locked ? 'rgba(201,168,76,0.08)' : m.accentBg,
+              border: 'none',
+              borderLeft: `1px solid ${locked ? 'rgba(201,168,76,0.2)' : m.accentBorder}`,
+              color: locked ? '#c9a84c' : m.accent,
+              fontSize: 13, fontWeight: 700,
               cursor: 'pointer', whiteSpace: 'nowrap', letterSpacing: 0.3,
               transition: 'background .15s', flexShrink: 0,
             }}
-            onMouseEnter={e => e.currentTarget.style.background = 'rgba(248,113,113,0.15)'}
-            onMouseLeave={e => e.currentTarget.style.background = m.accentBg}
+            onMouseEnter={e => e.currentTarget.style.background = locked ? 'rgba(201,168,76,0.15)' : 'rgba(248,113,113,0.15)'}
+            onMouseLeave={e => e.currentTarget.style.background = locked ? 'rgba(201,168,76,0.08)' : m.accentBg}
           >
-            {m.buttonText} →
+            {locked ? '🔒 Pro →' : `${m.buttonText} →`}
           </button>
         </div>
-      ))}
+        );
+      })}
     </div>
   );
 }

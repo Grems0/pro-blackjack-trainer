@@ -4,16 +4,17 @@ import Header from '../components/layout/Header';
 import { Check, X, Zap, Crown, ChevronDown, ChevronUp } from 'lucide-react';
 
 const FEATURES = [
-  { label: 'Module Running Count',           free: true,  pro: true  },
-  { label: 'Module True Count',              free: true,  pro: true  },
-  { label: 'Academy (toute la théorie)',      free: true,  pro: true  },
-  { label: 'Tableaux de stratégie S17/H17',  free: true,  pro: true  },
-  { label: 'Module Stratégie de base',        free: false, pro: true  },
-  { label: 'Module Déviations (I18 + Fab4)', free: false, pro: true  },
-  { label: 'Simulation Casino complète',      free: false, pro: true  },
-  { label: 'Statistiques de session',         free: false, pro: true  },
-  { label: 'Mode révision (type Anki)',        free: false, pro: true  },
-  { label: 'Parcours guidé personnalisé',     free: false, pro: true  },
+  { label: 'Module Running Count',                        free: true,  pro: true  },
+  { label: 'Module Stratégie de base',                    free: true,  pro: true  },
+  { label: 'Academy (toute la théorie)',                  free: true,  pro: true  },
+  { label: 'Tableaux de stratégie S17/H17',               free: true,  pro: true  },
+  { label: 'Module True Count',                           free: false, pro: true  },
+  { label: 'Module Déviations (Illustrious 18 + Fab 4)', free: false, pro: true  },
+  { label: 'Simulation Casino — paramètres joueur',       free: false, pro: true  },
+  { label: 'Simulation Casino — règles de la table',      free: false, pro: true  },
+  { label: 'Simulation Casino — grille de mises',         free: false, pro: true  },
+  { label: 'Statistiques EV de session',                  free: false, pro: true  },
+  { label: 'Mode révision type Anki',                     free: false, pro: true  },
 ];
 
 const FAQS = [
@@ -154,7 +155,7 @@ function FreeCard() {
         </div>
         <p style={{ color: '#555', fontSize: 12, margin: '4px 0 0' }}>Sans carte bancaire · sans engagement</p>
         <p style={{ color: '#555', fontSize: 13, margin: '12px 0 20px', lineHeight: 1.5 }}>
-          Commence par les bases du comptage. Accès permanent aux modules RC et TC.
+          Commence par les bases. Accès permanent aux modules Running Count et Stratégie de base.
         </p>
 
         <Link to="/" style={{ display: 'block', textDecoration: 'none' }}>
@@ -244,7 +245,7 @@ export default function PricingPage() {
           <span style={{ color: '#c9a84c' }}>Commencez dès aujourd'hui.</span>
         </h1>
         <p style={{ color: '#666', fontSize: 16, maxWidth: 520, margin: '0 auto', lineHeight: 1.6 }}>
-          Deux modules gratuits pour démarrer. Un abonnement Pro pour accéder à l'entraînement complet — Stratégie de base, Déviations, Simulation Casino.
+          Running Count et Stratégie de base gratuits pour démarrer. Pro débloque True Count, Déviations et la Simulation Casino complète.
         </p>
 
         {/* Toggle mensuel / annuel */}

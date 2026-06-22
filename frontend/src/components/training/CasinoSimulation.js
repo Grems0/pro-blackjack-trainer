@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ArrowLeft, BookOpen, X } from 'lucide-react';
+import { ArrowLeft, BookOpen, X, Lock } from 'lucide-react';
+import { useProAccess } from '../../hooks/useProAccess';
 import StrategyCharts from '../charts/StrategyCharts';
 import PlayingCard from '../game/PlayingCard';
 import {
@@ -116,7 +117,30 @@ function botPlayFull(hand, dk, shoe, rc, cfg) {
 }
 
 // ─── Config Screen ─────────────────────────────────────────────────────────────
+function ProLockOverlay({ navigate }) {
+  return (
+    <div
+      onClick={() => navigate('/pricing')}
+      style={{
+        position: 'absolute', inset: 0, zIndex: 10,
+        display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
+        gap: 8, cursor: 'pointer',
+        background: 'rgba(10,10,10,0.75)',
+        backdropFilter: 'blur(3px)',
+        borderRadius: 16,
+      }}
+    >
+      <div style={{ width: 40, height: 40, borderRadius: '50%', background: 'rgba(201,168,76,0.15)', border: '1px solid rgba(201,168,76,0.4)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+        <Lock size={16} color="#c9a84c" />
+      </div>
+      <span style={{ color: '#c9a84c', fontSize: 12, fontWeight: 800 }}>Pro — Débloquer →</span>
+    </div>
+  );
+}
+
 function ConfigScreen({ onStart }) {
+  const navigate = useNavigate();
+  const isPro = useProAccess();
   const [cfg, setCfg] = useState({ ...DEFAULT_CFG });
   const [bs, setBs] = useState({ ...DEFAULT_BETSPREAD });
   const [savedModels, setSavedModels] = useState(() => { try { return JSON.parse(localStorage.getItem('bj_betspreads') || '[]'); } catch { return []; } });
@@ -211,7 +235,8 @@ function ConfigScreen({ onStart }) {
         </div>
 
         {/* ── Règles de la table ── */}
-        <div className="bg-black/40 rounded-2xl border border-white/10 p-5">
+        <div className="bg-black/40 rounded-2xl border border-white/10 p-5" style={{ position: 'relative' }}>
+          {!isPro && <ProLockOverlay navigate={navigate} />}
           <h2 className="text-white font-bold mb-4">Règles de la table</h2>
 
           <div className="mb-3">
@@ -271,7 +296,8 @@ function ConfigScreen({ onStart }) {
         </div>
 
         {/* ── Configuration ── */}
-        <div className="bg-black/40 rounded-2xl border border-white/10 p-5">
+        <div className="bg-black/40 rounded-2xl border border-white/10 p-5" style={{ position: 'relative' }}>
+          {!isPro && <ProLockOverlay navigate={navigate} />}
           <h2 className="text-white font-bold mb-4">Configuration</h2>
 
           <div className="mb-4">
@@ -317,7 +343,8 @@ function ConfigScreen({ onStart }) {
         </div>
 
         {/* ── Betspread ── */}
-        <div className="bg-black/40 rounded-2xl border border-white/10 p-5">
+        <div className="bg-black/40 rounded-2xl border border-white/10 p-5" style={{ position: 'relative' }}>
+          {!isPro && <ProLockOverlay navigate={navigate} />}
           <h2 className="text-white font-bold mb-4">Grille de mises (Betspread)</h2>
           <div className="grid grid-cols-3 gap-2">
             {TC_RANGE.map(t => (
@@ -494,6 +521,7 @@ function HandRow({ label, hand, size = 'sm', active = false, bet, outcome }) {
 // ─── Main Component ───────────────────────────────────────────────────────────
 export default function CasinoSimulation() {
   const navigate = useNavigate();
+  const isPro = useProAccess();
 
   const [phase,         setPhase]         = useState('config');
   const [config,        setConfig]        = useState(null);
@@ -1034,7 +1062,23 @@ export default function CasinoSimulation() {
             </div>
           ))}
         </div>
-        <div className="grid grid-cols-2 gap-3">
+        <div className="grid grid-cols-2 gap-3" style={{ position: 'relative' }}>
+          {!isPro && (
+            <div
+              onClick={() => navigate('/pricing')}
+              style={{
+                position: 'absolute', inset: 0, zIndex: 10,
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                gap: 8, cursor: 'pointer',
+                background: 'rgba(10,10,10,0.8)',
+                backdropFilter: 'blur(3px)',
+                borderRadius: 12,
+              }}
+            >
+              <Lock size={14} color="#c9a84c" />
+              <span style={{ color: '#c9a84c', fontSize: 12, fontWeight: 800 }}>Statistiques EV — Pro →</span>
+            </div>
+          )}
           {[
             { label: 'Précision des décisions', ok: gs.stats.correctPlays, total: gs.stats.correctPlays + gs.stats.incorrectPlays },
             { label: 'Précision des mises', ok: gs.stats.correctBets, total: gs.stats.correctBets + gs.stats.incorrectBets },
