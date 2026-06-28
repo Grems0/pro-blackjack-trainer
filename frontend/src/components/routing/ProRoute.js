@@ -1,6 +1,6 @@
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useEffect } from 'react';
-import { useAuth } from '../../contexts/AuthContext';
+import { useAuth, isProActive } from '../../contexts/AuthContext';
 
 export default function ProRoute({ children }) {
   const { user } = useAuth();
@@ -8,11 +8,11 @@ export default function ProRoute({ children }) {
   const location = useLocation();
 
   useEffect(() => {
-    if (!user) {
+    if (!user || !isProActive(user)) {
       navigate('/login', { state: { from: location.pathname } });
     }
   }, [user, navigate, location]);
 
-  if (!user) return null;
+  if (!user || !isProActive(user)) return null;
   return children;
 }

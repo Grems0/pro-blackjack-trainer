@@ -1,51 +1,94 @@
-import React, { useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
-import { CheckCircle, Eye, EyeOff } from 'lucide-react';
-import { useAuth } from '../contexts/AuthContext';
-import { validatePassword } from '../contexts/AuthContext';
+import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { CheckCircle, Eye, EyeOff, Crown } from 'lucide-react';
+import { useAuth, validatePassword } from '../contexts/AuthContext';
+
+const PLAN_LABELS = { monthly: 'mensuel', annual: 'annuel' };
+const PLAN_DURATIONS = { monthly: '30 jours', annual: '1 an' };
 
 export default function PaymentSuccessPage() {
   const { register } = useAuth();
   const navigate = useNavigate();
+  const plan = localStorage.getItem('pending_plan') || 'monthly';
+
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [confirm, setConfirm] = useState('');
   const [showPw, setShowPw] = useState(false);
   const [error, setError] = useState(null);
   const [done, setDone] = useState(false);
+  const [countdown, setCountdown] = useState(30);
+
+  // Countdown après création de compte
+  useEffect(() => {
+    if (!done) return;
+    if (countdown <= 0) { navigate('/'); return; }
+    const t = setTimeout(() => setCountdown(c => c - 1), 1000);
+    return () => clearTimeout(t);
+  }, [done, countdown, navigate]);
 
   const pwError = validatePassword(password);
   const rules = [
-    { label: '1 majuscule', ok: /[A-Z]/.test(password) },
-    { label: '1 minuscule', ok: /[a-z]/.test(password) },
-    { label: '1 chiffre',   ok: /[0-9]/.test(password) },
-    { label: '6 caractères minimum', ok: password.length >= 6 },
+    { label: '1 majuscule',          ok: /[A-Z]/.test(password) },
+    { label: '1 minuscule',          ok: /[a-z]/.test(password) },
+    { label: '1 chiffre',            ok: /[0-9]/.test(password) },
+    { label: '6 caractères minimum', ok: password.length >= 6   },
   ];
 
   const handleSubmit = (e) => {
     e.preventDefault();
     if (password !== confirm) { setError('Les mots de passe ne correspondent pas.'); return; }
-    const err = register(email.trim(), password);
+    const err = register(email.trim(), password, plan);
     if (err) { setError(err); return; }
     setDone(true);
   };
+
+  const circumference = 2 * Math.PI * 28;
+  const progress = circumference * (1 - countdown / 30);
 
   if (done) {
     return (
       <div style={{ minHeight: '100vh', background: '#0a0a0a', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 24 }}>
         <div style={{ maxWidth: 440, width: '100%', textAlign: 'center' }}>
-          <div style={{ width: 80, height: 80, borderRadius: '50%', background: 'rgba(74,222,128,0.1)', border: '2px solid rgba(74,222,128,0.3)', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 24px' }}>
+          {/* Icône succès */}
+          <div style={{ width: 80, height: 80, borderRadius: '50%', background: 'rgba(74,222,128,0.1)', border: '2px solid rgba(74,222,128,0.3)', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 20px' }}>
             <CheckCircle size={40} color="#4ade80" />
           </div>
-          <h1 style={{ color: '#fff', fontSize: 26, fontWeight: 900, margin: '0 0 10px' }}>Compte créé !</h1>
-          <p style={{ color: '#666', fontSize: 14, lineHeight: 1.6, margin: '0 0 28px' }}>
-            Ton accès Pro est activé. Tous les modules sont débloqués.
+
+          <h1 style={{ color: '#fff', fontSize: 26, fontWeight: 900, margin: '0 0 8px' }}>Compte créé avec succès !</h1>
+          <p style={{ color: '#666', fontSize: 14, lineHeight: 1.6, margin: '0 0 6px' }}>
+            Ton abonnement <strong style={{ color: '#c9a84c' }}>Pro {PLAN_LABELS[plan]}</strong> est actif pour{' '}
+            <strong style={{ color: '#fff' }}>{PLAN_DURATIONS[plan]}</strong>.
           </p>
+          <p style={{ color: '#555', fontSize: 13, margin: '0 0 28px' }}>Tous les modules sont débloqués.</p>
+
+          {/* Countdown circulaire */}
+          <div style={{ position: 'relative', width: 80, height: 80, margin: '0 auto 20px' }}>
+            <svg width="80" height="80" style={{ transform: 'rotate(-90deg)' }}>
+              <circle cx="40" cy="40" r="28" fill="none" stroke="#1a1a1a" strokeWidth="4" />
+              <circle
+                cx="40" cy="40" r="28" fill="none"
+                stroke="#c9a84c" strokeWidth="4"
+                strokeDasharray={circumference}
+                strokeDashoffset={progress}
+                strokeLinecap="round"
+                style={{ transition: 'stroke-dashoffset 1s linear' }}
+              />
+            </svg>
+            <div style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+              <span style={{ color: '#c9a84c', fontSize: 22, fontWeight: 900 }}>{countdown}</span>
+            </div>
+          </div>
+
+          <p style={{ color: '#444', fontSize: 12, margin: '0 0 20px' }}>
+            Redirection automatique dans {countdown} seconde{countdown !== 1 ? 's' : ''}…
+          </p>
+
           <button
             onClick={() => navigate('/')}
-            style={{ padding: '14px 36px', borderRadius: 12, background: 'linear-gradient(135deg, #c9a84c, #a8823a)', border: 'none', color: '#000', fontWeight: 800, fontSize: 15, cursor: 'pointer' }}
+            style={{ padding: '13px 36px', borderRadius: 12, background: 'linear-gradient(135deg, #c9a84c, #a8823a)', border: 'none', color: '#000', fontWeight: 800, fontSize: 14, cursor: 'pointer' }}
           >
-            Commencer l'entraînement →
+            Commencer maintenant →
           </button>
         </div>
       </div>
@@ -55,15 +98,25 @@ export default function PaymentSuccessPage() {
   return (
     <div style={{ minHeight: '100vh', background: '#0a0a0a', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 24 }}>
       <div style={{ maxWidth: 420, width: '100%' }}>
-        {/* Confirmation paiement */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: 12, background: 'rgba(74,222,128,0.08)', border: '1px solid rgba(74,222,128,0.2)', borderRadius: 12, padding: '12px 16px', marginBottom: 24 }}>
-          <CheckCircle size={18} color="#4ade80" />
-          <span style={{ color: '#4ade80', fontSize: 13, fontWeight: 700 }}>Paiement confirmé — crée ton compte pour accéder à Pro</span>
+        {/* Bandeau confirmation */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: 10, background: 'rgba(74,222,128,0.08)', border: '1px solid rgba(74,222,128,0.2)', borderRadius: 12, padding: '12px 16px', marginBottom: 20 }}>
+          <CheckCircle size={17} color="#4ade80" />
+          <div>
+            <p style={{ color: '#4ade80', fontSize: 13, fontWeight: 700, margin: 0 }}>Paiement confirmé</p>
+            <p style={{ color: '#555', fontSize: 12, margin: 0 }}>
+              Abonnement <strong style={{ color: '#c9a84c' }}>Pro {PLAN_LABELS[plan]}</strong> — valable {PLAN_DURATIONS[plan]}
+            </p>
+          </div>
         </div>
 
         <div style={{ background: '#111', border: '1px solid #1e1e1e', borderRadius: 20, padding: '28px 24px' }}>
-          <h1 style={{ color: '#fff', fontSize: 20, fontWeight: 900, margin: '0 0 6px' }}>Créer ton compte</h1>
-          <p style={{ color: '#555', fontSize: 13, margin: '0 0 24px' }}>Email + mot de passe pour te connecter lors de tes prochaines visites.</p>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 6 }}>
+            <Crown size={18} color="#c9a84c" />
+            <h1 style={{ color: '#fff', fontSize: 20, fontWeight: 900, margin: 0 }}>Créer ton compte</h1>
+          </div>
+          <p style={{ color: '#555', fontSize: 13, margin: '0 0 22px' }}>
+            Choisis un email et un mot de passe pour te reconnecter lors de tes prochaines visites.
+          </p>
 
           <form onSubmit={handleSubmit}>
             <div style={{ marginBottom: 14 }}>
@@ -96,9 +149,9 @@ export default function PaymentSuccessPage() {
               </div>
             </div>
 
-            {/* Règles mot de passe */}
+            {/* Indicateurs mot de passe */}
             {password.length > 0 && (
-              <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginBottom: 14 }}>
+              <div style={{ display: 'flex', gap: 7, flexWrap: 'wrap', marginBottom: 14 }}>
                 {rules.map(r => (
                   <span key={r.label} style={{ fontSize: 11, fontWeight: 600, padding: '2px 8px', borderRadius: 6, background: r.ok ? 'rgba(74,222,128,0.1)' : 'rgba(248,113,113,0.08)', color: r.ok ? '#4ade80' : '#f87171', border: `1px solid ${r.ok ? 'rgba(74,222,128,0.25)' : 'rgba(248,113,113,0.2)'}` }}>
                     {r.ok ? '✓' : '✗'} {r.label}
@@ -125,12 +178,7 @@ export default function PaymentSuccessPage() {
               </div>
             )}
 
-            <button type="submit" style={{
-              width: '100%', padding: '13px', borderRadius: 11,
-              background: 'linear-gradient(135deg, #c9a84c, #a8823a)',
-              border: 'none', color: '#000', fontWeight: 800, fontSize: 14,
-              cursor: 'pointer',
-            }}>
+            <button type="submit" style={{ width: '100%', padding: '13px', borderRadius: 11, background: 'linear-gradient(135deg, #c9a84c, #a8823a)', border: 'none', color: '#000', fontWeight: 800, fontSize: 14, cursor: 'pointer' }}>
               Créer mon compte →
             </button>
           </form>

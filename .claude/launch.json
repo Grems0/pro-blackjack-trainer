@@ -3,9 +3,9 @@
   "configurations": [
     {
       "name": "blackjack-trainer",
-      "runtimeExecutable": "python3",
-      "runtimeArgs": ["-m", "http.server", "5500"],
-      "port": 5500
+      "runtimeExecutable": "sh",
+      "runtimeArgs": ["start.sh"],
+      "port": 3000
     }
   ]
 }

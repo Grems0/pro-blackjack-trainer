@@ -219,6 +219,7 @@ export default function PricingPage() {
   };
 
   const handleSubscribe = (plan) => {
+    localStorage.setItem('pending_plan', plan);
     window.location.href = PAYMENT_LINKS[plan];
   };
 
