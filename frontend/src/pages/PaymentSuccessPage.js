@@ -35,10 +35,10 @@ export default function PaymentSuccessPage() {
     { label: '6 caractères minimum', ok: password.length >= 6   },
   ];
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
     if (password !== confirm) { setError('Les mots de passe ne correspondent pas.'); return; }
-    const err = register(email.trim(), password, plan);
+    const err = await register(email.trim(), password, plan);
     if (err) { setError(err); return; }
     setDone(true);
   };

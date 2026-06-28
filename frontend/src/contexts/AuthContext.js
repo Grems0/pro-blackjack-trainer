@@ -1,4 +1,5 @@
 import React, { createContext, useContext, useState, useCallback } from 'react';
+import { supabase, hashPassword } from '../lib/supabase';
 
 const AuthContext = createContext(null);
 
@@ -7,6 +8,12 @@ function loadUser() {
     const raw = localStorage.getItem('bj_user');
     return raw ? JSON.parse(raw) : null;
   } catch { return null; }
+}
+
+function saveLocal(u) {
+  localStorage.setItem('bj_user', JSON.stringify(u));
+  localStorage.setItem('pro_access', 'true');
+  window.dispatchEvent(new Event('pro_access_changed'));
 }
 
 export function validatePassword(password) {
@@ -26,42 +33,83 @@ export function isProActive(user) {
 export function AuthProvider({ children }) {
   const [user, setUser] = useState(loadUser);
 
-  const register = useCallback((email, password, plan = 'monthly') => {
+  // ── Register : sauvegarde localStorage + Supabase ────────────────────────
+  const register = useCallback(async (email, password, plan = 'monthly') => {
     const err = validatePassword(password);
     if (err) return err;
 
-    const now = new Date();
+    const now    = new Date();
     const expiry = new Date(now);
-    if (plan === 'annual') {
-      expiry.setFullYear(expiry.getFullYear() + 1);
-    } else {
-      expiry.setMonth(expiry.getMonth() + 1);
-    }
+    if (plan === 'annual') expiry.setFullYear(expiry.getFullYear() + 1);
+    else expiry.setMonth(expiry.getMonth() + 1);
+
+    const hashed = await hashPassword(password);
 
     const u = {
-      email,
-      password: btoa(password),
-      isPro: true,
+      email:        email.toLowerCase(),
+      password:     hashed,
       plan,
       subscribedAt: now.toISOString(),
-      expiryDate: expiry.toISOString(),
+      expiryDate:   expiry.toISOString(),
     };
-    localStorage.setItem('bj_user', JSON.stringify(u));
-    localStorage.setItem('pro_access', 'true');
+
+    // Sauvegarde Supabase (persistance inter-appareils / après vidage navigateur)
+    const { error } = await supabase.from('users').upsert({
+      email:       u.email,
+      password:    hashed,
+      plan:        plan,
+      expiry_date: expiry.toISOString(),
+    }, { onConflict: 'email' });
+
+    if (error) console.error('Supabase register error:', error.message);
+
+    saveLocal(u);
     localStorage.removeItem('pending_plan');
-    window.dispatchEvent(new Event('pro_access_changed'));
     setUser(u);
     return null;
   }, []);
 
-  const login = useCallback((email, password) => {
-    const stored = loadUser();
-    if (!stored) return 'Aucun compte trouvé.';
-    if (stored.email !== email) return 'Email incorrect.';
-    if (stored.password !== btoa(password)) return 'Mot de passe incorrect.';
+  // ── Login : localStorage d'abord, sinon restauration depuis Supabase ─────
+  const login = useCallback(async (email, password) => {
+    const hashed = await hashPassword(password);
+    const emailLower = email.toLowerCase();
+
+    // 1. Chercher en local
+    let stored = loadUser();
+
+    // 2. Si rien en local (navigateur vidé) → chercher dans Supabase
+    if (!stored || stored.email !== emailLower) {
+      const { data, error } = await supabase
+        .from('users')
+        .select('*')
+        .eq('email', emailLower)
+        .single();
+
+      if (error || !data) return 'Aucun compte trouvé pour cet email.';
+
+      if (data.password !== hashed) return 'Mot de passe incorrect.';
+
+      // Reconstruire la session locale depuis Supabase
+      stored = {
+        email:        data.email,
+        password:     data.password,
+        plan:         data.plan,
+        subscribedAt: data.created_at,
+        expiryDate:   data.expiry_date,
+      };
+
+      saveLocal(stored);
+      setUser(stored);
+
+      if (!isProActive(stored)) return 'Ton abonnement a expiré. Renouvelle-le sur la page Tarifs.';
+      return null;
+    }
+
+    // 3. Compte trouvé en local — vérifier mot de passe
+    if (stored.password !== hashed) return 'Mot de passe incorrect.';
     if (!isProActive(stored)) return 'Ton abonnement a expiré. Renouvelle-le sur la page Tarifs.';
-    localStorage.setItem('pro_access', 'true');
-    window.dispatchEvent(new Event('pro_access_changed'));
+
+    saveLocal(stored);
     setUser(stored);
     return null;
   }, []);

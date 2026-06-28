@@ -11,9 +11,9 @@ export default function LoginPage() {
   const [showPw, setShowPw] = useState(false);
   const [error, setError] = useState(null);
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    const err = login(email.trim(), password);
+    const err = await login(email.trim(), password);
     if (err) { setError(err); return; }
     navigate('/');
   };
