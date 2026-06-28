@@ -59,6 +59,10 @@ export default function Header() {
                     <span style={{ color: '#3a3a3a', fontSize: 10, fontWeight: 600 }}>Pro</span>
                     <span style={{ color: '#2a2a2a', fontSize: 10 }}>·</span>
                     <span style={{ color: '#2a2a2a', fontSize: 10 }}>expire {expiryStr}</span>
+                    <span style={{ color: '#2a2a2a', fontSize: 10 }}>·</span>
+                    <a href="https://billing.stripe.com/p/login/bpc_1TnLrRCmcZpRfkmYplYUxjUU" target="_blank" rel="noreferrer" style={{ color: '#333', fontSize: 10, fontWeight: 600, textDecoration: 'none' }}>
+                      Gérer →
+                    </a>
                   </>
                 ) : (
                   <>
