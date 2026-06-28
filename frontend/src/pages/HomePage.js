@@ -36,7 +36,7 @@ export default function HomePage() {
             <div>
               <p className="text-emerald-300 font-semibold text-sm">European No Hole Card</p>
               <p className="text-gray-500 text-xs mt-0.5">
-                Le croupier ne vérifie pas son BJ · Vous perdez les doubles/splits si BJ croupier · Basic Strategy et déviations adaptées
+                Le croupier ne vérifie pas son BJ · Vous perdez les doubles/splits si BJ croupier
               </p>
             </div>
           </div>

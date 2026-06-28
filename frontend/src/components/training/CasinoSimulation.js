@@ -117,23 +117,37 @@ function botPlayFull(hand, dk, shoe, rc, cfg) {
 }
 
 // ─── Config Screen ─────────────────────────────────────────────────────────────
-function ProLockOverlay({ navigate }) {
+function ProLockOverlay({ navigate, label }) {
   return (
     <div
       onClick={() => navigate('/pricing')}
       style={{
         position: 'absolute', inset: 0, zIndex: 10,
         display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
-        gap: 8, cursor: 'pointer',
-        background: 'rgba(10,10,10,0.75)',
-        backdropFilter: 'blur(3px)',
+        gap: 10, cursor: 'pointer',
+        background: 'rgba(10,10,10,0.82)',
+        backdropFilter: 'blur(4px)',
         borderRadius: 16,
       }}
     >
-      <div style={{ width: 40, height: 40, borderRadius: '50%', background: 'rgba(201,168,76,0.15)', border: '1px solid rgba(201,168,76,0.4)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-        <Lock size={16} color="#c9a84c" />
+      <div style={{ width: 44, height: 44, borderRadius: '50%', background: 'rgba(201,168,76,0.15)', border: '1px solid rgba(201,168,76,0.4)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+        <Lock size={18} color="#c9a84c" />
       </div>
-      <span style={{ color: '#c9a84c', fontSize: 12, fontWeight: 800 }}>Pro — Débloquer →</span>
+      <div style={{ textAlign: 'center', padding: '0 20px' }}>
+        <p style={{ color: '#fff', fontSize: 13, fontWeight: 800, margin: '0 0 4px' }}>
+          Abonnement Pro requis
+        </p>
+        <p style={{ color: '#888', fontSize: 11, margin: '0 0 10px', lineHeight: 1.5 }}>
+          {label || 'Cette section'} est réservée aux abonnés.<br />Souscris un abonnement pour débloquer l'accès.
+        </p>
+        <span style={{
+          display: 'inline-block', padding: '7px 16px', borderRadius: 8,
+          background: 'linear-gradient(135deg, #c9a84c, #a8823a)',
+          color: '#000', fontSize: 12, fontWeight: 800,
+        }}>
+          Voir les offres →
+        </span>
+      </div>
     </div>
   );
 }
@@ -236,7 +250,7 @@ function ConfigScreen({ onStart }) {
 
         {/* ── Règles de la table ── */}
         <div className="bg-black/40 rounded-2xl border border-white/10 p-5" style={{ position: 'relative' }}>
-          {!isPro && <ProLockOverlay navigate={navigate} />}
+          {!isPro && <ProLockOverlay navigate={navigate} label="Les règles de la table" />}
           <h2 className="text-white font-bold mb-4">Règles de la table</h2>
 
           <div className="mb-3">
@@ -297,7 +311,7 @@ function ConfigScreen({ onStart }) {
 
         {/* ── Configuration ── */}
         <div className="bg-black/40 rounded-2xl border border-white/10 p-5" style={{ position: 'relative' }}>
-          {!isPro && <ProLockOverlay navigate={navigate} />}
+          {!isPro && <ProLockOverlay navigate={navigate} label="Les paramètres du joueur" />}
           <h2 className="text-white font-bold mb-4">Configuration</h2>
 
           <div className="mb-4">
@@ -344,7 +358,7 @@ function ConfigScreen({ onStart }) {
 
         {/* ── Betspread ── */}
         <div className="bg-black/40 rounded-2xl border border-white/10 p-5" style={{ position: 'relative' }}>
-          {!isPro && <ProLockOverlay navigate={navigate} />}
+          {!isPro && <ProLockOverlay navigate={navigate} label="Les écarts de paris (betspread)" />}
           <h2 className="text-white font-bold mb-4">Grille de mises (Betspread)</h2>
           <div className="grid grid-cols-3 gap-2">
             {TC_RANGE.map(t => (
@@ -1063,22 +1077,7 @@ export default function CasinoSimulation() {
           ))}
         </div>
         <div className="grid grid-cols-2 gap-3" style={{ position: 'relative' }}>
-          {!isPro && (
-            <div
-              onClick={() => navigate('/pricing')}
-              style={{
-                position: 'absolute', inset: 0, zIndex: 10,
-                display: 'flex', alignItems: 'center', justifyContent: 'center',
-                gap: 8, cursor: 'pointer',
-                background: 'rgba(10,10,10,0.8)',
-                backdropFilter: 'blur(3px)',
-                borderRadius: 12,
-              }}
-            >
-              <Lock size={14} color="#c9a84c" />
-              <span style={{ color: '#c9a84c', fontSize: 12, fontWeight: 800 }}>Statistiques EV — Pro →</span>
-            </div>
-          )}
+          {!isPro && <ProLockOverlay navigate={navigate} label="Les statistiques EV" />}
           {[
             { label: 'Précision des décisions', ok: gs.stats.correctPlays, total: gs.stats.correctPlays + gs.stats.incorrectPlays },
             { label: 'Précision des mises', ok: gs.stats.correctBets, total: gs.stats.correctBets + gs.stats.incorrectBets },
