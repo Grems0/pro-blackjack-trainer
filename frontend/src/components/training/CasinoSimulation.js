@@ -250,7 +250,6 @@ function ConfigScreen({ onStart }) {
 
         {/* ── Règles de la table ── */}
         <div className="bg-black/40 rounded-2xl border border-white/10 p-5" style={{ position: 'relative' }}>
-          {!isPro && <ProLockOverlay navigate={navigate} label="Les règles de la table" />}
           <h2 className="text-white font-bold mb-4">Règles de la table</h2>
 
           <div className="mb-3">
@@ -311,7 +310,6 @@ function ConfigScreen({ onStart }) {
 
         {/* ── Configuration ── */}
         <div className="bg-black/40 rounded-2xl border border-white/10 p-5" style={{ position: 'relative' }}>
-          {!isPro && <ProLockOverlay navigate={navigate} label="Les paramètres du joueur" />}
           <h2 className="text-white font-bold mb-4">Configuration</h2>
 
           <div className="mb-4">
@@ -358,7 +356,6 @@ function ConfigScreen({ onStart }) {
 
         {/* ── Betspread ── */}
         <div className="bg-black/40 rounded-2xl border border-white/10 p-5" style={{ position: 'relative' }}>
-          {!isPro && <ProLockOverlay navigate={navigate} label="Les écarts de paris (betspread)" />}
           <h2 className="text-white font-bold mb-4">Grille de mises (Betspread)</h2>
           <div className="grid grid-cols-3 gap-2">
             {TC_RANGE.map(t => (
