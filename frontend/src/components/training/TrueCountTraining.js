@@ -211,38 +211,57 @@ function CardShoe({ cardsRemaining }) {
   );
 }
 
-// ─── Casino Discard Tray ─────────────────────────────────────────────────────
+// ─── Casino Discard Tray — photo-realistic ───────────────────────────────────
 function DiscardTray({ cardsInTray }) {
-  const fill = cardsInTray / TOTAL_CARDS;
-  const F = { tl: [26, 50], tr: [174, 50], br: [170, 318], bl: [30, 318] };
-  const dX = 26, dY = -18;
-  const R = { tl: F.tr, tr: [F.tr[0]+dX, F.tr[1]+dY], br: [F.br[0]+dX, F.br[1]+dY], bl: F.br };
-  const T = { fl: F.tl, fr: F.tr, br: [F.tr[0]+dX, F.tr[1]+dY], bl: [F.tl[0]+dX, F.tl[1]+dY] };
-
-  const iL = F.tl[0] + 6, iR = F.tr[0] - 6;
-  const iW = iR - iL;
-  const iTop = F.tl[1] + 4;
-  const iBot = F.bl[1] - 4;
-  const iH = iBot - iTop;
-
-  const stackH = Math.round(fill * iH);
-  const stackTop = iBot - stackH;
-  const cardEdgePx = Math.max(0.7, Math.min(2.8, stackH / Math.max(1, cardsInTray)));
-  const numLines = stackH > 0 ? Math.min(cardsInTray, Math.floor(stackH / cardEdgePx)) : 0;
-  const topH = Math.min(18, stackH);
-
   const pts = (...coords) => coords.map(([x, y]) => `${x},${y}`).join(' ');
+
+  // ── Geometry — tall tray, clear 3/4 perspective ──
+  // Outer front face
+  const oL=20, oR=188, oT=36, oB=386;
+  // Depth vector
+  const dX=34, dY=-26;
+  // Acrylic wall thickness (visible as inset)
+  const W=8;
+  // Inner card area
+  const iL=oL+W, iR=oR-W, iT=oT+W, iB=oB-W;
+  const iW=iR-iL;  // ~142
+  const iH=iB-iT;  // ~334 — full height for 312 cards
+
+  const fill = cardsInTray / TOTAL_CARDS;
+  const stackH = Math.round(fill * iH);
+  const stackTop = iB - stackH;
+
   const exactDecksRemaining = (TOTAL_CARDS - cardsInTray) / 52;
   const zoneHigh = Math.ceil(exactDecksRemaining);
-  const zoneLow = Math.floor(exactDecksRemaining);
+  const zoneLow  = Math.floor(exactDecksRemaining);
   const zoneColor = exactDecksRemaining >= 3.5 ? '#4ade80' : exactDecksRemaining >= 2 ? '#c9a84c' : '#f87171';
 
-  const deckMarkers = [5, 4, 3, 2, 1].map(n => {
-    const markerFill = (6 - n) / 6;
-    const y = iBot - Math.round(markerFill * iH);
-    const color = n >= 4 ? '#4ade80' : n === 3 ? '#c9a84c' : '#f87171';
-    return { n, y, color };
+  // ── Card edge rendering ──
+  // Real card = ~0.28mm; 312 cards ≈ 87mm stack → at iH=334px → 1.07px/card
+  // We render visible stripe groups (1 stripe ≈ 2–3 cards)
+  const pxPerCard = stackH / Math.max(1, cardsInTray);
+  const stripeH   = Math.max(1.2, pxPerCard * 2.5);
+  const numStripes = stackH > 0 ? Math.min(130, Math.floor(stackH / stripeH)) : 0;
+
+  // Cut card position: 52 cards from bottom (deck 1 marker area)
+  const cutCardIdx = Math.round(52 / cardsInTray * numStripes);
+
+  // ── Deck markers (etched lines at 1/6, 2/6 … 5/6 of inner height from bottom) ──
+  const deckMarkers = [1,2,3,4,5].map(n => {
+    const frac  = n / 6;
+    const y     = iB - Math.round(frac * iH);
+    const color = n <= 2 ? '#f87171' : n === 3 ? '#c9a84c' : '#4ade80';
+    const decksLeft = 6 - n;
+    const isActive  = stackTop <= y && stackTop > (n < 5 ? iB - Math.round((n+1)/6*iH) : iT);
+    return { n, y, color, decksLeft, isActive };
   });
+
+  // Right-face corners
+  const Rtl = [oR, oT], Rtr = [oR+dX, oT+dY], Rbr = [oR+dX, oB+dY], Rbl = [oR, oB];
+  // Top-face corners
+  const Ttl = [oL, oT], Ttr = [oR, oT], Tbr = [oR+dX, oT+dY], Tbl = [oL+dX, oT+dY];
+
+  const W2 = 260, H2 = 450;
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 10 }}>
@@ -250,142 +269,327 @@ function DiscardTray({ cardsInTray }) {
         Bac de défausse
       </p>
 
-      <svg viewBox="0 0 220 370" width={190} height={320} xmlns="http://www.w3.org/2000/svg" style={{ overflow: 'visible', display: 'block' }}>
+      <svg viewBox={`0 0 ${W2} ${H2}`} width={210} height={360}
+           xmlns="http://www.w3.org/2000/svg" style={{ overflow: 'visible', display: 'block' }}>
         <defs>
-          <pattern id="dPat" x="0" y="0" width="11" height="11" patternUnits="userSpaceOnUse">
-            <rect width="11" height="11" fill="#173096"/>
-            <polygon points="5.5,1.2 9.8,5.5 5.5,9.8 1.2,5.5" fill="none" stroke="rgba(255,255,255,0.62)" strokeWidth="0.85"/>
-            <circle cx="5.5" cy="5.5" r="0.9" fill="rgba(255,255,255,0.38)"/>
+          {/* Blue casino card-back diamond pattern */}
+          <pattern id="cardBack" x="0" y="0" width="10" height="10" patternUnits="userSpaceOnUse">
+            <rect width="10" height="10" fill="#1a34a8"/>
+            <polygon points="5,0.8 9.2,5 5,9.2 0.8,5"
+              fill="none" stroke="rgba(255,255,255,0.65)" strokeWidth="0.8"/>
+            <circle cx="5" cy="5" r="0.8" fill="rgba(255,255,255,0.35)"/>
           </pattern>
-          <pattern id="dPatFr" x="0" y="0" width="11" height="11" patternUnits="userSpaceOnUse">
-            <rect width="11" height="11" fill="#1c38a8"/>
-            <polygon points="5.5,1.2 9.8,5.5 5.5,9.8 1.2,5.5" fill="none" stroke="rgba(255,255,255,0.7)" strokeWidth="0.9"/>
-            <circle cx="5.5" cy="5.5" r="1" fill="rgba(255,255,255,0.45)"/>
-          </pattern>
-          <linearGradient id="acrylL" x1="0" x2="1" y1="0" y2="0">
-            <stop offset="0%" stopColor="white" stopOpacity="0.55"/>
-            <stop offset="8%" stopColor="white" stopOpacity="0.18"/>
-            <stop offset="100%" stopColor="white" stopOpacity="0.02"/>
+
+          {/* Acrylic wall: left bright edge */}
+          <linearGradient id="wallL" x1="0" x2="1" y1="0" y2="0">
+            <stop offset="0%"   stopColor="#fff" stopOpacity="0.7"/>
+            <stop offset="15%"  stopColor="#d8ecff" stopOpacity="0.25"/>
+            <stop offset="100%" stopColor="#a8d4f0" stopOpacity="0.04"/>
           </linearGradient>
-          <linearGradient id="acrylR" x1="0" x2="1" y1="0" y2="0">
-            <stop offset="0%" stopColor="white" stopOpacity="0.02"/>
-            <stop offset="90%" stopColor="white" stopOpacity="0.12"/>
-            <stop offset="100%" stopColor="white" stopOpacity="0.32"/>
+          {/* Acrylic wall: right edge */}
+          <linearGradient id="wallR" x1="0" x2="1" y1="0" y2="0">
+            <stop offset="0%"   stopColor="#a8d4f0" stopOpacity="0.03"/>
+            <stop offset="80%"  stopColor="#c0e0ff" stopOpacity="0.18"/>
+            <stop offset="100%" stopColor="#fff" stopOpacity="0.55"/>
           </linearGradient>
-          <linearGradient id="acrylTop" x1="0" x2="0" y1="0" y2="1">
-            <stop offset="0%" stopColor="white" stopOpacity="0.28"/>
-            <stop offset="100%" stopColor="white" stopOpacity="0.03"/>
+          {/* Top face gradient */}
+          <linearGradient id="wallTop" x1="0" x2="0" y1="0" y2="1">
+            <stop offset="0%"   stopColor="#fff" stopOpacity="0.45"/>
+            <stop offset="100%" stopColor="#c0d8f0" stopOpacity="0.05"/>
           </linearGradient>
-          <linearGradient id="stackShadL" x1="0" x2="1" y1="0" y2="0">
-            <stop offset="0%" stopColor="black" stopOpacity="0.18"/>
-            <stop offset="100%" stopColor="black" stopOpacity="0"/>
+          {/* Right face side */}
+          <linearGradient id="sideR" x1="0" x2="1" y1="0" y2="0">
+            <stop offset="0%"   stopColor="#b8d8f0" stopOpacity="0.14"/>
+            <stop offset="100%" stopColor="#90bce0" stopOpacity="0.06"/>
           </linearGradient>
-          <linearGradient id="stackShadR" x1="0" x2="1" y1="0" y2="0">
-            <stop offset="0%" stopColor="black" stopOpacity="0"/>
-            <stop offset="100%" stopColor="black" stopOpacity="0.14"/>
+          {/* Card stack body: warm white paper */}
+          <linearGradient id="paperBody" x1="0" x2="1" y1="0" y2="0">
+            <stop offset="0%"   stopColor="#dedad5" stopOpacity="1"/>
+            <stop offset="8%"   stopColor="#f0ece6" stopOpacity="1"/>
+            <stop offset="92%"  stopColor="#ede9e3" stopOpacity="1"/>
+            <stop offset="100%" stopColor="#d8d4ce" stopOpacity="1"/>
           </linearGradient>
-          <radialGradient id="floorShad" cx="50%" cy="30%" r="50%">
-            <stop offset="0%" stopColor="black" stopOpacity="0.55"/>
-            <stop offset="100%" stopColor="black" stopOpacity="0"/>
+          {/* Stack top-card shine */}
+          <linearGradient id="topCardShine" x1="0" x2="1" y1="0" y2="1">
+            <stop offset="0%"   stopColor="#fff" stopOpacity="0.22"/>
+            <stop offset="100%" stopColor="#fff" stopOpacity="0"/>
+          </linearGradient>
+          {/* Drop shadow under tray */}
+          <radialGradient id="dropShadow" cx="50%" cy="20%" r="50%">
+            <stop offset="0%"   stopColor="#000" stopOpacity="0.6"/>
+            <stop offset="100%" stopColor="#000" stopOpacity="0"/>
           </radialGradient>
-          <linearGradient id="innerTint" x1="0" x2="0" y1="0" y2="1">
-            <stop offset="0%" stopColor="#8bb8d4" stopOpacity="0.08"/>
-            <stop offset="100%" stopColor="#8bb8d4" stopOpacity="0.02"/>
+          {/* Left inner shadow (wall edge cast on cards) */}
+          <linearGradient id="innerShadL" x1="0" x2="1" y1="0" y2="0">
+            <stop offset="0%"   stopColor="#000" stopOpacity="0.22"/>
+            <stop offset="100%" stopColor="#000" stopOpacity="0"/>
           </linearGradient>
-          <linearGradient id="tcShine" x1="0" x2="1" y1="0" y2="1">
-            <stop offset="0%" stopColor="white" stopOpacity="0.18"/>
-            <stop offset="100%" stopColor="white" stopOpacity="0"/>
+          {/* Right inner shadow */}
+          <linearGradient id="innerShadR" x1="0" x2="1" y1="0" y2="0">
+            <stop offset="0%"   stopColor="#000" stopOpacity="0"/>
+            <stop offset="100%" stopColor="#000" stopOpacity="0.18"/>
           </linearGradient>
+          {/* Base plastic */}
+          <linearGradient id="baseFront" x1="0" x2="0" y1="0" y2="1">
+            <stop offset="0%"   stopColor="#2a2a2a"/>
+            <stop offset="40%"  stopColor="#111"/>
+            <stop offset="100%" stopColor="#0a0a0a"/>
+          </linearGradient>
+          <linearGradient id="baseSide" x1="0" x2="1" y1="0" y2="0">
+            <stop offset="0%"   stopColor="#1a1a1a"/>
+            <stop offset="100%" stopColor="#080808"/>
+          </linearGradient>
+          {/* Clip path for card area */}
+          <clipPath id="cardClip">
+            <rect x={iL} y={iT} width={iW} height={iH}/>
+          </clipPath>
         </defs>
 
-        <ellipse cx={110} cy={335} rx={90} ry={10} fill="url(#floorShad)"/>
+        {/* ── Drop shadow ── */}
+        <ellipse cx={oL+(oR-oL)/2+dX/2} cy={oB+dY+28} rx={100} ry={11} fill="url(#dropShadow)"/>
 
-        <polygon points={pts([F.bl[0]-3,F.bl[1]+1],[F.br[0]+3,F.br[1]+1],[F.br[0]+3,F.br[1]+13],[F.bl[0]-3,F.bl[1]+13])} fill="#111"/>
-        <polygon points={pts([F.br[0]+3,F.br[1]+1],[R.br[0]+3,R.br[1]+1],[R.br[0]+3,R.br[1]+13],[F.br[0]+3,F.br[1]+13])} fill="#0a0a0a"/>
-        <line x1={F.bl[0]-3} y1={F.bl[1]+1} x2={F.br[0]+3} y2={F.br[1]+1} stroke="#333" strokeWidth="1"/>
+        {/* ══ BASE PLATFORM (heavy black plastic) ══ */}
+        {/* Base front face */}
+        <polygon points={pts([oL-4,oB+2],[oR+4,oB+2],[oR+4,oB+16],[oL-4,oB+16])} fill="url(#baseFront)"/>
+        {/* Base right side */}
+        <polygon points={pts([oR+4,oB+2],[oR+dX+2,oB+dY+2],[oR+dX+2,oB+dY+16],[oR+4,oB+16])} fill="url(#baseSide)"/>
+        {/* Base top sheen */}
+        <line x1={oL-4} y1={oB+2} x2={oR+4} y2={oB+2} stroke="rgba(255,255,255,0.18)" strokeWidth="1.2"/>
+        {/* Base screw details */}
+        <circle cx={oL+10} cy={oB+9} r={2.2} fill="#1a1a1a" stroke="#333" strokeWidth="0.6"/>
+        <circle cx={oR-10} cy={oB+9} r={2.2} fill="#1a1a1a" stroke="#333" strokeWidth="0.6"/>
 
-        <polygon points={pts([R.tl[0],R.tl[1]],[R.tr[0],R.tr[1]],[R.br[0],R.br[1]],[R.bl[0],R.bl[1]])} fill="rgba(160,195,230,0.07)" stroke="rgba(200,225,255,0.22)" strokeWidth="1.2"/>
-        {stackH > 0 && Array.from({ length: Math.min(numLines, 60) }).map((_, i) => {
-          const t = (i + 1) / Math.min(numLines, 60);
-          const yF = iBot - t * stackH;
-          const yR = yF + dY * 0.9;
-          return <line key={`rs${i}`} x1={F.tr[0]} y1={yF} x2={R.tr[0]} y2={yR} stroke={i % 4 === 0 ? '#aaa' : '#ccc'} strokeWidth="0.4" opacity="0.6"/>;
-        })}
-        <polygon points={pts([R.tl[0],R.tl[1]],[R.tr[0],R.tr[1]],[R.br[0],R.br[1]],[R.bl[0],R.bl[1]])} fill="url(#acrylR)"/>
-
-        <polygon points={pts([T.fl[0],T.fl[1]],[T.fr[0],T.fr[1]],[T.br[0],T.br[1]],[T.bl[0],T.bl[1]])} fill="rgba(180,215,255,0.14)" stroke="rgba(220,235,255,0.35)" strokeWidth="1.2"/>
-        <polygon points={pts([T.fl[0],T.fl[1]],[T.fr[0],T.fr[1]],[T.br[0],T.br[1]],[T.bl[0],T.bl[1]])} fill="url(#acrylTop)"/>
-
-        <polygon points={pts([F.tl[0],F.tl[1]],[F.tr[0],F.tr[1]],[F.br[0],F.br[1]],[F.bl[0],F.bl[1]])} fill="url(#innerTint)"/>
-
-        {stackH > 0 && (
-          <>
-            <rect x={iL} y={stackTop} width={iW} height={stackH} fill="#e6e2dc"/>
-            {Array.from({ length: numLines }).map((_, i) => {
-              const y = iBot - Math.round((i + 1) * (stackH / numLines));
-              if (y <= stackTop) return null;
-              const major = i % 13 === 12;
-              return <line key={`ce${i}`} x1={iL} y1={y} x2={iR} y2={y} stroke={major ? '#8a8682' : (i % 2 === 0 ? '#ccc9c4' : '#dedad5')} strokeWidth={major ? 0.7 : 0.45}/>;
-            })}
-            <rect x={iL} y={stackTop} width={16} height={stackH} fill="url(#stackShadL)"/>
-            <rect x={iR-14} y={stackTop} width={14} height={stackH} fill="url(#stackShadR)"/>
-            {topH > 0 && (
-              <>
-                <rect x={iL} y={stackTop} width={iW} height={topH} fill="url(#dPatFr)" rx="1"/>
-                <rect x={iL+3} y={stackTop+2} width={iW-6} height={topH-4} fill="none" stroke="rgba(255,255,255,0.45)" strokeWidth="0.9" rx="0.5"/>
-                <rect x={iL} y={stackTop} width={iW} height={topH} fill="url(#tcShine)" rx="1"/>
-                <rect x={iL} y={stackTop+topH-2} width={iW} height={3} fill="rgba(0,0,0,0.15)"/>
-              </>
-            )}
-          </>
-        )}
-
-        <polygon points={pts([F.tl[0],F.tl[1]],[F.tr[0],F.tr[1]],[F.br[0],F.br[1]],[F.bl[0],F.bl[1]])} fill="none" stroke="rgba(200,225,255,0.32)" strokeWidth="1.8"/>
-        <rect x={F.tl[0]} y={F.tl[1]} width={10} height={F.bl[1]-F.tl[1]} fill="url(#acrylL)"/>
-        <rect x={F.tr[0]-10} y={F.tr[1]} width={10} height={F.br[1]-F.tr[1]} fill="url(#acrylR)"/>
-        <rect x={F.tl[0]} y={F.tl[1]} width={F.tr[0]-F.tl[0]} height={12} fill="url(#acrylTop)"/>
-        <line x1={F.tl[0]} y1={F.tl[1]} x2={F.bl[0]} y2={F.bl[1]} stroke="rgba(255,255,255,0.55)" strokeWidth="2"/>
-        <line x1={F.tl[0]} y1={F.tl[1]} x2={F.tr[0]} y2={F.tr[1]} stroke="rgba(255,255,255,0.5)" strokeWidth="2"/>
-        <line x1={F.bl[0]} y1={F.bl[1]} x2={F.br[0]} y2={F.br[1]} stroke="rgba(200,225,255,0.28)" strokeWidth="1.5"/>
-        <line x1={F.tr[0]} y1={F.tr[1]} x2={F.br[0]} y2={F.br[1]} stroke="rgba(200,225,255,0.22)" strokeWidth="1.5"/>
-        <line x1={F.tl[0]+18} y1={F.tl[1]+8} x2={F.tl[0]+18} y2={F.bl[1]-20} stroke="rgba(255,255,255,0.1)" strokeWidth="5" strokeLinecap="round"/>
-        <circle cx={F.tl[0]+1} cy={F.tl[1]+1} r={2.5} fill="rgba(255,255,255,0.7)"/>
-        <circle cx={F.tr[0]-1} cy={F.tr[1]+1} r={2.5} fill="rgba(255,255,255,0.45)"/>
-
-        {deckMarkers.map(({ n, y, color }) => {
-          const isActive = stackTop > 0 && stackTop <= y && (n === 5 ? true : stackTop > deckMarkers.find(m => m.n === n + 1)?.y);
+        {/* ══ RIGHT SIDE FACE ══ */}
+        <polygon points={pts(Rtl, Rtr, Rbr, Rbl)} fill="url(#sideR)" stroke="rgba(180,215,250,0.2)" strokeWidth="1"/>
+        {/* Card edges visible through right acrylic wall */}
+        {stackH > 0 && Array.from({ length: Math.min(numStripes, 80) }).map((_, i) => {
+          const t  = (i + 0.5) / Math.min(numStripes, 80);
+          const yF = iB - t * stackH;
+          const yR = yF + dY * 0.85;
+          const isDeckBoundary = (i % Math.round(numStripes / 6) === 0);
           return (
-            <g key={n}>
-              {isActive && <rect x={iL} y={y-1} width={iW} height={Math.min(22, iBot-y)} fill={color} opacity={0.06} rx={1}/>}
-              <line x1={iL} y1={y} x2={iR} y2={y} stroke={color} strokeWidth={isActive ? 1.2 : 0.7} strokeDasharray={isActive ? '5,2' : '3,3'} opacity={isActive ? 0.9 : 0.45}/>
-              <text x={iL+4} y={y-2} fontSize={isActive ? 9 : 7.5} fontWeight={isActive ? '800' : '600'} fill={color} textAnchor="start" opacity={isActive ? 1 : 0.55} style={{ letterSpacing: '0.02em' }}>{n}J↑</text>
-            </g>
+            <line key={`rse${i}`}
+              x1={oR} y1={yF} x2={oR+dX} y2={yR}
+              stroke={isDeckBoundary ? 'rgba(140,130,120,0.7)' : 'rgba(200,195,188,0.45)'}
+              strokeWidth={isDeckBoundary ? 0.7 : 0.35}
+            />
           );
         })}
+        {/* Right face acrylic overlay */}
+        <polygon points={pts(Rtl, Rtr, Rbr, Rbl)} fill="url(#wallR)" opacity="0.9"/>
+        <line x1={Rtr[0]} y1={Rtr[1]} x2={Rbr[0]} y2={Rbr[1]} stroke="rgba(255,255,255,0.45)" strokeWidth="1.5"/>
+
+        {/* ══ TOP FACE ══ */}
+        <polygon points={pts(Ttl, Ttr, Tbr, Tbl)} fill="rgba(180,220,255,0.16)" stroke="rgba(200,230,255,0.3)" strokeWidth="1"/>
+        <polygon points={pts(Ttl, Ttr, Tbr, Tbl)} fill="url(#wallTop)"/>
+        {/* Top edge highlight */}
+        <line x1={Ttl[0]} y1={Ttl[1]} x2={Ttr[0]} y2={Ttr[1]} stroke="rgba(255,255,255,0.6)" strokeWidth="2"/>
+
+        {/* ══ FRONT FACE INTERIOR TINT (empty space above cards) ══ */}
+        {stackH < iH && (
+          <rect x={iL} y={iT} width={iW} height={iH - stackH}
+            fill="rgba(150,200,240,0.04)"/>
+        )}
+
+        {/* ══ CARD STACK ══ */}
+        {stackH > 0 && (
+          <g clipPath="url(#cardClip)">
+            {/* Card body — warm white paper */}
+            <rect x={iL} y={stackTop} width={iW} height={stackH} fill="url(#paperBody)"/>
+
+            {/* ── Card edge stripes ──
+                Real cards: white paper edges with hairline dark gaps.
+                We render alternating light/shadow bands. */}
+            {Array.from({ length: numStripes }).map((_, i) => {
+              const yBase = iB - ((i + 1) / numStripes) * stackH;
+              if (yBase <= stackTop) return null;
+
+              // Card index this stripe represents
+              const cardIdx = Math.round((i / numStripes) * cardsInTray);
+              const isDeckBoundary = cardIdx > 0 && cardIdx % 52 < Math.ceil(cardsInTray / numStripes);
+              const isSuitGroup    = cardIdx % 13 === 0 && !isDeckBoundary;
+
+              if (isDeckBoundary) {
+                // Deck separator: a 2px dark band — very visible
+                return (
+                  <g key={`ce${i}`}>
+                    <rect x={iL+1} y={yBase-1.2} width={iW-2} height={2.4}
+                      fill="rgba(90,84,76,0.75)"/>
+                    <line x1={iL+1} y1={yBase-1.2} x2={iR-1} y2={yBase-1.2}
+                      stroke="rgba(255,255,255,0.3)" strokeWidth="0.4"/>
+                  </g>
+                );
+              }
+              if (isSuitGroup) {
+                // Suit group (13 cards): slightly more visible line
+                return (
+                  <line key={`ce${i}`}
+                    x1={iL+1} y1={yBase} x2={iR-1} y2={yBase}
+                    stroke="rgba(150,144,136,0.55)" strokeWidth="0.7"/>
+                );
+              }
+              // Normal card gap: alternating very subtle lines
+              const shade = i % 3 === 0
+                ? 'rgba(168,162,154,0.35)'
+                : i % 3 === 1
+                  ? 'rgba(200,195,188,0.2)'
+                  : 'rgba(180,175,168,0.28)';
+              return (
+                <line key={`ce${i}`}
+                  x1={iL+1} y1={yBase} x2={iR-1} y2={yBase}
+                  stroke={shade} strokeWidth="0.5"/>
+              );
+            })}
+
+            {/* ── Cut card (yellow plastic) — placed 52 cards from bottom ── */}
+            {cardsInTray >= 52 && (() => {
+              const cutY = iB - (52 / cardsInTray) * stackH;
+              return cutY > stackTop && cutY < iB ? (
+                <g key="cut">
+                  <rect x={iL} y={cutY-1.5} width={iW} height={3} fill="#f5c800" opacity="0.85"/>
+                  <rect x={iL} y={cutY-1.5} width={iW} height={1} fill="rgba(255,255,200,0.6)"/>
+                </g>
+              ) : null;
+            })()}
+
+            {/* ── Top card (face-down, blue diamond pattern) ── */}
+            {stackH >= 4 && (
+              <g>
+                <rect x={iL} y={stackTop} width={iW} height={Math.min(20, stackH)}
+                  fill="url(#cardBack)" rx="1.5"/>
+                {/* White border frame (casino card detail) */}
+                <rect x={iL+3} y={stackTop+2.5} width={iW-6} height={Math.min(16, stackH-4)}
+                  fill="none" stroke="rgba(255,255,255,0.5)" strokeWidth="1" rx="0.8"/>
+                {/* Shine */}
+                <rect x={iL} y={stackTop} width={iW} height={Math.min(20, stackH)}
+                  fill="url(#topCardShine)" rx="1.5"/>
+                {/* Bottom shadow under top card */}
+                <rect x={iL} y={stackTop+Math.min(19,stackH)-2} width={iW} height={3}
+                  fill="rgba(0,0,0,0.18)"/>
+              </g>
+            )}
+
+            {/* Inner wall shadows (acrylic edge cast on card surface) */}
+            <rect x={iL} y={stackTop} width={14} height={stackH} fill="url(#innerShadL)"/>
+            <rect x={iR-12} y={stackTop} width={12} height={stackH} fill="url(#innerShadR)"/>
+          </g>
+        )}
+
+        {/* ══ FRONT ACRYLIC WALLS (rendered OVER cards) ══ */}
+
+        {/* Left wall — thick acrylic (W px wide), bright */}
+        <rect x={oL} y={oT} width={W} height={oB-oT} fill="rgba(200,230,255,0.08)"/>
+        {/* Left outer bright edge */}
+        <line x1={oL} y1={oT} x2={oL} y2={oB} stroke="rgba(255,255,255,0.75)" strokeWidth="2.2"/>
+        {/* Left inner edge (wall thickness boundary) */}
+        <line x1={iL} y1={iT} x2={iL} y2={iB} stroke="rgba(255,255,255,0.22)" strokeWidth="0.8"/>
+        {/* Left wall gradient fill */}
+        <rect x={oL} y={oT} width={W} height={oB-oT} fill="url(#wallL)"/>
+
+        {/* Right wall */}
+        <rect x={iR} y={oT} width={W} height={oB-oT} fill="rgba(200,230,255,0.06)"/>
+        <line x1={oR} y1={oT} x2={oR} y2={oB} stroke="rgba(255,255,255,0.42)" strokeWidth="1.8"/>
+        <line x1={iR} y1={iT} x2={iR} y2={iB} stroke="rgba(255,255,255,0.18)" strokeWidth="0.7"/>
+        <rect x={iR} y={oT} width={W} height={oB-oT} fill="url(#wallR)"/>
+
+        {/* Top wall */}
+        <rect x={oL} y={oT} width={oR-oL} height={W} fill="rgba(200,230,255,0.10)"/>
+        <line x1={oL} y1={oT} x2={oR} y2={oT} stroke="rgba(255,255,255,0.7)" strokeWidth="2.2"/>
+        <line x1={iL} y1={iT} x2={iR} y2={iT} stroke="rgba(255,255,255,0.2)" strokeWidth="0.8"/>
+        <rect x={oL} y={oT} width={oR-oL} height={W} fill="url(#wallTop)"/>
+
+        {/* Bottom wall (card insertion slot area) */}
+        <rect x={oL} y={iB} width={oR-oL} height={W} fill="rgba(0,0,0,0.35)"/>
+        {/* Slot opening */}
+        <rect x={iL+12} y={iB+1} width={iW-24} height={W-2} fill="rgba(0,0,0,0.6)" rx="1"/>
+        <line x1={iL+12} y1={iB+1} x2={iR-12} y2={iB+1} stroke="rgba(0,0,0,0.5)" strokeWidth="0.8"/>
+
+        {/* Front face outer outline */}
+        <rect x={oL} y={oT} width={oR-oL} height={oB-oT}
+          fill="none" stroke="rgba(180,215,255,0.25)" strokeWidth="1.5"/>
+
+        {/* Corner refraction dots */}
+        <circle cx={oL+1.5} cy={oT+1.5} r={3} fill="rgba(255,255,255,0.8)"/>
+        <circle cx={oR-1.5} cy={oT+1.5} r={2} fill="rgba(255,255,255,0.5)"/>
+        <circle cx={oL+1.5} cy={oB-1.5} r={1.8} fill="rgba(255,255,255,0.3)"/>
+
+        {/* Diagonal glare streak (casino overhead lighting) */}
+        <line x1={oL+22} y1={oT+12} x2={oL+22} y2={oB-30}
+          stroke="rgba(255,255,255,0.07)" strokeWidth="7" strokeLinecap="round"/>
+        <line x1={oL+32} y1={oT+8} x2={oL+32} y2={oT+80}
+          stroke="rgba(255,255,255,0.08)" strokeWidth="3" strokeLinecap="round"/>
+
+        {/* ══ DECK MARKERS (etched into acrylic, shown on inner wall edges) ══ */}
+        {deckMarkers.map(({ n, y, color, decksLeft, isActive }) => (
+          <g key={n}>
+            {/* Zone highlight band when active */}
+            {isActive && (
+              <rect x={iL+1} y={y} width={iW-2} height={Math.min(28, iB - y)}
+                fill={color} opacity={0.05} rx={1}/>
+            )}
+            {/* Etched marker line across inner width */}
+            <line x1={iL+1} y1={y} x2={iR-1} y2={y}
+              stroke={color}
+              strokeWidth={isActive ? 1.4 : 0.8}
+              strokeDasharray={isActive ? '6,2.5' : '3.5,3'}
+              opacity={isActive ? 0.95 : 0.4}/>
+            {/* Small notch on left wall */}
+            <rect x={oL+1} y={y-2} width={W-2} height={4}
+              fill={color} opacity={isActive ? 0.6 : 0.25} rx={1}/>
+            {/* Label */}
+            <text x={iL+6} y={y-3}
+              fontSize={isActive ? 9.5 : 7.5}
+              fontWeight={isActive ? '900' : '600'}
+              fill={color}
+              opacity={isActive ? 1 : 0.5}
+              style={{ letterSpacing: '0.04em', fontFamily: 'monospace' }}>
+              {decksLeft}J↑
+            </text>
+            {/* Right-side marker dot */}
+            <circle cx={iR-4} cy={y} r={isActive ? 2.5 : 1.5}
+              fill={color} opacity={isActive ? 0.9 : 0.35}/>
+          </g>
+        ))}
       </svg>
 
+      {/* Indicator below SVG */}
       <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4 }}>
         <p style={{ color: 'rgba(255,255,255,0.25)', fontSize: 10, margin: 0, fontVariantNumeric: 'tabular-nums', letterSpacing: '0.08em' }}>
-          {cardsInTray} cartes défaussées · {(cardsInTray / 52).toFixed(1)} jeux
+          {cardsInTray} cartes · {(cardsInTray / 52).toFixed(1)} jeux défaussés
         </p>
-        <div style={{ width: 190, background: '#1a1a1a', borderRadius: 6, overflow: 'hidden', border: '1px solid #2a2a2a' }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', padding: '3px 6px 0', marginBottom: 2 }}>
+
+        {/* Deck progress bar */}
+        <div style={{ width: 210, background: '#151515', borderRadius: 6, overflow: 'hidden', border: '1px solid #222' }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', padding: '3px 7px 0' }}>
             {[6,5,4,3,2,1,0].map(n => (
-              <span key={n} style={{ fontSize: 8, color: '#333', fontWeight: 700, lineHeight: 1 }}>{n}</span>
+              <span key={n} style={{ fontSize: 8, color: '#2e2e2e', fontWeight: 700 }}>{n}</span>
             ))}
           </div>
-          <div style={{ position: 'relative', height: 10, margin: '0 6px 5px' }}>
+          <div style={{ position: 'relative', height: 11, margin: '2px 7px 5px' }}>
             <div style={{ position: 'absolute', inset: 0, display: 'flex', borderRadius: 4, overflow: 'hidden' }}>
               {[...Array(6)].map((_, i) => (
-                <div key={i} style={{ flex: 1, background: i < 2 ? 'rgba(248,113,113,0.15)' : i < 4 ? 'rgba(201,168,76,0.15)' : 'rgba(74,222,128,0.15)', borderRight: i < 5 ? '1px solid #222' : 'none' }}/>
+                <div key={i} style={{
+                  flex: 1,
+                  background: i < 2 ? 'rgba(248,113,113,0.12)' : i < 4 ? 'rgba(201,168,76,0.12)' : 'rgba(74,222,128,0.12)',
+                  borderRight: i < 5 ? '1px solid #1e1e1e' : 'none',
+                }}/>
               ))}
             </div>
-            <div style={{ position: 'absolute', top: 0, bottom: 0, left: `${(exactDecksRemaining / 6) * 100}%`, width: 3, background: zoneColor, borderRadius: 2, boxShadow: `0 0 6px ${zoneColor}`, transform: 'translateX(-50%)' }}/>
+            <div style={{
+              position: 'absolute', top: 0, bottom: 0,
+              left: `${(exactDecksRemaining / 6) * 100}%`,
+              width: 3, background: zoneColor, borderRadius: 2,
+              boxShadow: `0 0 7px ${zoneColor}80`,
+              transform: 'translateX(-50%)',
+            }}/>
           </div>
         </div>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 6, background: `${zoneColor}12`, border: `1px solid ${zoneColor}35`, borderRadius: 8, padding: '4px 10px' }}>
-          <div style={{ width: 6, height: 6, borderRadius: '50%', background: zoneColor }}/>
-          <span style={{ color: zoneColor, fontSize: 11, fontWeight: 700 }}>Zone {zoneLow}–{zoneHigh} jeux restants</span>
+
+        <div style={{ display: 'flex', alignItems: 'center', gap: 6, background: `${zoneColor}12`, border: `1px solid ${zoneColor}30`, borderRadius: 8, padding: '4px 12px' }}>
+          <div style={{ width: 6, height: 6, borderRadius: '50%', background: zoneColor, boxShadow: `0 0 5px ${zoneColor}` }}/>
+          <span style={{ color: zoneColor, fontSize: 11, fontWeight: 700 }}>
+            Zone {zoneLow}–{zoneHigh} jeux restants
+          </span>
         </div>
       </div>
     </div>
