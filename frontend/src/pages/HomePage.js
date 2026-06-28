@@ -9,8 +9,13 @@ import EVStats from '../components/settings/EVStats';
 import TrainingModules from '../components/modules/TrainingModules';
 import TrainingModals from '../components/modules/TrainingModals';
 import VarianceVisualizer from '../components/visualizer/VarianceVisualizer';
+import { useProAccess } from '../hooks/useProAccess';
+import { Lock } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 
 export default function HomePage() {
+  const isPro = useProAccess();
+  const navigate = useNavigate();
   const { resetToDefaults } = useGame();
   const [showVarianceVisualizer, setShowVarianceVisualizer] = useState(false);
   
@@ -55,7 +60,32 @@ export default function HomePage() {
               <BetSpread />
               
               {/* EV Statistics */}
-              <EVStats />
+              <div style={{ position: 'relative' }}>
+                <div style={{ filter: isPro ? 'none' : 'blur(6px)', pointerEvents: isPro ? 'auto' : 'none', userSelect: isPro ? 'auto' : 'none' }}>
+                  <EVStats />
+                </div>
+                {!isPro && (
+                  <div
+                    onClick={() => navigate('/pricing')}
+                    style={{
+                      position: 'absolute', inset: 0, zIndex: 10,
+                      display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
+                      gap: 10, cursor: 'pointer', borderRadius: 12,
+                    }}
+                  >
+                    <div style={{ width: 42, height: 42, borderRadius: '50%', background: 'rgba(201,168,76,0.15)', border: '1px solid rgba(201,168,76,0.4)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                      <Lock size={18} color="#c9a84c" />
+                    </div>
+                    <div style={{ textAlign: 'center' }}>
+                      <p style={{ color: '#fff', fontSize: 13, fontWeight: 800, margin: '0 0 4px' }}>Abonnement Pro requis</p>
+                      <p style={{ color: '#888', fontSize: 11, margin: '0 0 10px' }}>Les statistiques EV sont réservées aux abonnés.</p>
+                      <span style={{ display: 'inline-block', padding: '7px 16px', borderRadius: 8, background: 'linear-gradient(135deg, #c9a84c, #a8823a)', color: '#000', fontSize: 12, fontWeight: 800 }}>
+                        Voir les offres →
+                      </span>
+                    </div>
+                  </div>
+                )}
+              </div>
               
               {/* Action Buttons */}
               <div className="space-y-3">
