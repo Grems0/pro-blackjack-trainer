@@ -78,7 +78,9 @@ export default function HomePage() {
                     </div>
                     <div style={{ textAlign: 'center' }}>
                       <p style={{ color: '#fff', fontSize: 13, fontWeight: 800, margin: '0 0 4px' }}>Abonnement Pro requis</p>
-                      <p style={{ color: '#888', fontSize: 11, margin: '0 0 10px' }}>Les statistiques EV sont réservées aux abonnés.</p>
+                      <p style={{ color: '#888', fontSize: 11, margin: '0 0 10px', lineHeight: 1.6, maxWidth: 260 }}>
+                        Analyse ta rentabilité selon tes paramètres actuels : gain attendu par heure, risque de ruine, précision de tes décisions et de tes mises. Pour savoir si ta stratégie est vraiment gagnante.
+                      </p>
                       <span style={{ display: 'inline-block', padding: '7px 16px', borderRadius: 8, background: 'linear-gradient(135deg, #c9a84c, #a8823a)', color: '#000', fontSize: 12, fontWeight: 800 }}>
                         Voir les offres →
                       </span>
