@@ -213,22 +213,13 @@ export default function PricingPage() {
   const [loading,  setLoading]  = useState(false);
   const [error,    setError]    = useState(null);
 
-  const handleSubscribe = async (plan) => {
-    setLoading(true);
-    setError(null);
-    try {
-      const res = await fetch(`${process.env.REACT_APP_BACKEND_URL || ''}/api/create-checkout-session`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ plan }),
-      });
-      if (!res.ok) throw new Error('Erreur lors de la création de la session.');
-      const { url } = await res.json();
-      window.location.href = url;
-    } catch (err) {
-      setError("Impossible de démarrer le paiement. Réessaie dans un instant.");
-      setLoading(false);
-    }
+  const PAYMENT_LINKS = {
+    monthly: 'https://buy.stripe.com/3cIfZg8mRg3UgNy72penS01',
+    annual:  'https://buy.stripe.com/14A9AS8mRcRI1SE86tenS02',
+  };
+
+  const handleSubscribe = (plan) => {
+    window.location.href = PAYMENT_LINKS[plan];
   };
 
   return (
