@@ -6,15 +6,14 @@ import { Check, X, Zap, Crown, ChevronDown, ChevronUp } from 'lucide-react';
 const FEATURES = [
   { label: 'Module Running Count',                        free: true,  pro: true  },
   { label: 'Module Stratégie de base',                    free: true,  pro: true  },
-  { label: 'Academy (toute la théorie)',                  free: true,  pro: true  },
-  { label: 'Tableaux de stratégie S17/H17',               free: true,  pro: true  },
+  { label: 'Tableaux de stratégie S17/H17',               free: false, pro: true  },
+  { label: 'Académie (toute la théorie)',                  free: false, pro: true  },
   { label: 'Module True Count',                           free: false, pro: true  },
   { label: 'Module Déviations (Illustrious 18 + Fab 4)', free: false, pro: true  },
-  { label: 'Simulation Casino — paramètres joueur',       free: false, pro: true  },
-  { label: 'Simulation Casino — règles de la table',      free: false, pro: true  },
-  { label: 'Simulation Casino — grille de mises',         free: false, pro: true  },
-  { label: 'Statistiques EV de session',                  free: false, pro: true  },
+  { label: 'Simulation Casino complète',                  free: false, pro: true  },
+  { label: 'Statistiques EV',                             free: false, pro: true  },
   { label: 'Mode révision type Anki',                     free: false, pro: true  },
+  { label: 'Parcours guidé recommandé',                   free: false, pro: true  },
 ];
 
 const FAQS = [
@@ -32,7 +31,7 @@ const FAQS = [
   },
   {
     q: 'Est-ce que le plan gratuit restera gratuit ?',
-    a: "Oui. Les modules Running Count et True Count ainsi que l'Academy restent gratuits indéfiniment.",
+    a: "Oui. Les modules Running Count et Stratégie de base restent gratuits indéfiniment.",
   },
   {
     q: 'Puis-je passer du mensuel à l\'annuel plus tard ?',

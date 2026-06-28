@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ArrowLeft, RotateCcw, BookOpen, X, RefreshCw } from 'lucide-react';
+import { ArrowLeft, RotateCcw, BookOpen, X, RefreshCw, Lock } from 'lucide-react';
+import { useProAccess } from '../../hooks/useProAccess';
 import SessionResults from './SessionResults';
 import { useGame } from '../../contexts/GameContext';
 import PlayingCard from '../game/PlayingCard';
@@ -38,6 +39,8 @@ function weightedRandom(items) {
 
 export default function BasicStrategyTraining() {
   const navigate = useNavigate();
+  const isPro = useProAccess();
+  const [showProMsg, setShowProMsg] = useState(false);
   const { tableRules, currentModule } = useGame();
 
   const savedConfig = (() => { try { return JSON.parse(localStorage.getItem('trainingModuleConfig') || '{}'); } catch { return {}; } })();
@@ -312,10 +315,33 @@ export default function BasicStrategyTraining() {
                 <span className="text-amber-300 text-sm font-bold">Révision {reviewCount > 0 ? `(${reviewCount})` : '✓'}</span>
               </button>
             )}
-            <button onClick={() => setShowChart(true)} className="flex items-center gap-2 px-3 py-2 rounded-lg bg-amber-500/20 hover:bg-amber-500/30 border border-amber-500/40 transition-colors">
-              <BookOpen className="w-4 h-4 text-amber-400" />
+            <button onClick={() => isPro ? setShowChart(true) : setShowProMsg(true)} className="flex items-center gap-2 px-3 py-2 rounded-lg bg-amber-500/20 hover:bg-amber-500/30 border border-amber-500/40 transition-colors">
+              {isPro ? <BookOpen className="w-4 h-4 text-amber-400" /> : <Lock className="w-4 h-4 text-amber-400" />}
               <span className="text-amber-300 text-sm font-semibold hidden sm:inline">Tableau</span>
             </button>
+
+            {showProMsg && (
+              <div style={{ position: 'fixed', inset: 0, zIndex: 50, display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'rgba(0,0,0,0.7)', backdropFilter: 'blur(4px)' }}
+                onClick={() => setShowProMsg(false)}>
+                <div onClick={e => e.stopPropagation()} style={{ background: '#111', border: '1px solid #2a2a2a', borderRadius: 16, padding: '28px 24px', maxWidth: 360, width: '90%', textAlign: 'center' }}>
+                  <div style={{ width: 48, height: 48, borderRadius: '50%', background: 'rgba(201,168,76,0.15)', border: '1px solid rgba(201,168,76,0.4)', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 16px' }}>
+                    <Lock size={20} color="#c9a84c" />
+                  </div>
+                  <h3 style={{ color: '#fff', fontSize: 16, fontWeight: 800, margin: '0 0 8px' }}>Tableau réservé aux abonnés</h3>
+                  <p style={{ color: '#666', fontSize: 13, lineHeight: 1.6, margin: '0 0 20px' }}>
+                    Les tableaux de stratégie S17/H17 sont accessibles avec un abonnement Pro.
+                  </p>
+                  <div style={{ display: 'flex', gap: 10 }}>
+                    <button onClick={() => setShowProMsg(false)} style={{ flex: 1, padding: '10px', borderRadius: 10, background: 'transparent', border: '1px solid #2a2a2a', color: '#888', fontWeight: 700, fontSize: 13, cursor: 'pointer' }}>
+                      Fermer
+                    </button>
+                    <button onClick={() => navigate('/pricing')} style={{ flex: 1, padding: '10px', borderRadius: 10, background: 'linear-gradient(135deg, #c9a84c, #a8823a)', border: 'none', color: '#000', fontWeight: 800, fontSize: 13, cursor: 'pointer' }}>
+                      Voir les offres →
+                    </button>
+                  </div>
+                </div>
+              </div>
+            )}
             <span className="text-xs font-bold px-2 py-1 rounded bg-amber-500/20 text-amber-300 border border-amber-500/30">{ruleVariant}</span>
             <button
               onClick={() => { setSessionTime(Math.floor((Date.now() - startTimeRef.current) / 1000)); setShowSummary(true); }}
