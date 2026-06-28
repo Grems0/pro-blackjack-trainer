@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { useGame } from '../contexts/GameContext';
+import { useAuth } from '../contexts/AuthContext';
 import Header from '../components/layout/Header';
 import PlayerSettings from '../components/settings/PlayerSettings';
 import BetSpread from '../components/settings/BetSpread';
@@ -16,6 +17,7 @@ import { useNavigate } from 'react-router-dom';
 export default function HomePage() {
   const isPro = useProAccess();
   const navigate = useNavigate();
+  const { user } = useAuth();
   const { resetToDefaults } = useGame();
   const [showVarianceVisualizer, setShowVarianceVisualizer] = useState(false);
   
@@ -116,48 +118,51 @@ export default function HomePage() {
           <div className="border-t border-gray-800 my-8"></div>
           
           {/* Parcours recommandé */}
-          <div className="mb-8">
-            <p className="text-xs font-bold uppercase tracking-widest text-gray-600 mb-4">Parcours recommandé</p>
-            <div className="flex items-stretch gap-0 overflow-x-auto pb-1">
-              {[
-                { step: 1, name: 'Running Count',    sub: 'Compter carte par carte',         color: '#4ade80', bg: 'rgba(74,222,128,0.08)',  border: 'rgba(74,222,128,0.2)',  id: 'running-count' },
-                { step: 2, name: 'True Count',       sub: 'Convertir RC en TC',              color: '#60a5fa', bg: 'rgba(96,165,250,0.08)',  border: 'rgba(96,165,250,0.2)',  id: 'true-count' },
-                { step: 3, name: 'Stratégie de base',sub: 'Maîtriser chaque décision',       color: '#fcd34d', bg: 'rgba(252,211,77,0.08)',  border: 'rgba(252,211,77,0.2)',  id: 'basic-strategy' },
-                { step: 4, name: 'Déviations',       sub: 'Ajuster selon le TC',             color: '#c084fc', bg: 'rgba(192,132,252,0.08)', border: 'rgba(192,132,252,0.2)', id: 'deviations' },
-                { step: 5, name: 'Simulation Casino',sub: 'Tout combiner en conditions réelles', color: '#f87171', bg: 'rgba(248,113,113,0.08)',  border: 'rgba(248,113,113,0.2)', id: 'in-casino' },
-              ].map((s, i, arr) => (
-                <div key={s.id} style={{ display: 'flex', alignItems: 'stretch', flex: i === arr.length - 1 ? '1.4' : '1', minWidth: 120 }}>
-                  <div
-                    style={{
+          <div className="mb-8" style={{ position: 'relative' }}>
+            <div style={{ filter: isPro ? 'none' : 'blur(4px)', pointerEvents: isPro ? 'auto' : 'none', userSelect: isPro ? 'auto' : 'none' }}>
+              <p className="text-xs font-bold uppercase tracking-widest text-gray-600 mb-4">Parcours recommandé</p>
+              <div className="flex items-stretch gap-0 overflow-x-auto pb-1">
+                {[
+                  { step: 1, name: 'Running Count',    sub: 'Compter carte par carte',             color: '#4ade80', bg: 'rgba(74,222,128,0.08)',  border: 'rgba(74,222,128,0.2)',  pro: false },
+                  { step: 2, name: 'True Count',       sub: 'Convertir RC en TC',                  color: '#60a5fa', bg: 'rgba(96,165,250,0.08)',  border: 'rgba(96,165,250,0.2)',  pro: true  },
+                  { step: 3, name: 'Stratégie de base',sub: 'Maîtriser chaque décision',           color: '#fcd34d', bg: 'rgba(252,211,77,0.08)',  border: 'rgba(252,211,77,0.2)',  pro: false },
+                  { step: 4, name: 'Déviations',       sub: 'Ajuster selon le TC',                 color: '#c084fc', bg: 'rgba(192,132,252,0.08)', border: 'rgba(192,132,252,0.2)', pro: true  },
+                  { step: 5, name: 'Simulation Casino',sub: 'Tout combiner en conditions réelles', color: '#f87171', bg: 'rgba(248,113,113,0.08)',  border: 'rgba(248,113,113,0.2)', pro: true  },
+                ].map((s, i, arr) => (
+                  <div key={s.name} style={{ display: 'flex', alignItems: 'stretch', flex: i === arr.length - 1 ? '1.4' : '1', minWidth: 120 }}>
+                    <div style={{
                       flex: 1, background: s.bg, border: `1px solid ${s.border}`,
                       borderRadius: i === 0 ? '10px 0 0 10px' : i === arr.length - 1 ? '0 10px 10px 0' : 0,
                       borderLeft: i > 0 ? 'none' : undefined,
                       padding: '12px 14px', cursor: 'default',
-                    }}
-                  >
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 4 }}>
-                      <span style={{
-                        width: 18, height: 18, borderRadius: '50%', background: s.color,
-                        display: 'flex', alignItems: 'center', justifyContent: 'center',
-                        fontSize: 10, fontWeight: 900, color: '#000', flexShrink: 0,
-                      }}>{s.step}</span>
-                      <span style={{ color: s.color, fontSize: 12, fontWeight: 700, whiteSpace: 'nowrap' }}>{s.name}</span>
-                    </div>
-                    <p style={{ color: '#444', fontSize: 11, margin: 0, lineHeight: 1.4 }}>{s.sub}</p>
-                  </div>
-                  {i < arr.length - 1 && (
-                    <div style={{
-                      width: 24, flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center',
-                      background: '#0e0e0e', borderTop: '1px solid #1a1a1a', borderBottom: '1px solid #1a1a1a',
                     }}>
-                      <svg width="10" height="10" viewBox="0 0 10 10" fill="none">
-                        <path d="M2 5h6M5 2l3 3-3 3" stroke="#333" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
-                      </svg>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 4 }}>
+                        <span style={{ width: 18, height: 18, borderRadius: '50%', background: s.color, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 10, fontWeight: 900, color: '#000', flexShrink: 0 }}>{s.step}</span>
+                        <span style={{ color: s.color, fontSize: 12, fontWeight: 700, whiteSpace: 'nowrap' }}>{s.name}</span>
+                        {s.pro && <Lock size={10} color="#c9a84c" style={{ flexShrink: 0 }} />}
+                      </div>
+                      <p style={{ color: '#444', fontSize: 11, margin: 0, lineHeight: 1.4 }}>{s.sub}</p>
                     </div>
-                  )}
-                </div>
-              ))}
+                    {i < arr.length - 1 && (
+                      <div style={{ width: 24, flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#0e0e0e', borderTop: '1px solid #1a1a1a', borderBottom: '1px solid #1a1a1a' }}>
+                        <svg width="10" height="10" viewBox="0 0 10 10" fill="none">
+                          <path d="M2 5h6M5 2l3 3-3 3" stroke="#333" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+                        </svg>
+                      </div>
+                    )}
+                  </div>
+                ))}
+              </div>
             </div>
+            {!isPro && (
+              <div onClick={() => navigate('/pricing')} style={{ position: 'absolute', inset: 0, zIndex: 10, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 10, cursor: 'pointer', borderRadius: 12 }}>
+                <div style={{ background: 'rgba(10,10,10,0.7)', backdropFilter: 'blur(2px)', borderRadius: 10, padding: '10px 18px', display: 'flex', alignItems: 'center', gap: 10, border: '1px solid rgba(201,168,76,0.25)' }}>
+                  <Lock size={14} color="#c9a84c" />
+                  <span style={{ color: '#c9a84c', fontSize: 12, fontWeight: 800 }}>Parcours guidé — Pro uniquement</span>
+                  <span style={{ color: '#888', fontSize: 11 }}>Voir les offres →</span>
+                </div>
+              </div>
+            )}
           </div>
 
           {/* Training Modules Section */}
@@ -175,6 +180,44 @@ export default function HomePage() {
           isOpen={showVarianceVisualizer}
           onClose={() => setShowVarianceVisualizer(false)}
         />
+
+        {/* Statut abonnement */}
+        {user && (
+          <div style={{ borderTop: '1px solid #111', padding: '16px 24px', background: '#0a0a0a' }}>
+            <div className="max-w-7xl mx-auto" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 8 }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                <div style={{ width: 8, height: 8, borderRadius: '50%', background: isPro ? '#4ade80' : '#f87171', flexShrink: 0 }} />
+                <span style={{ color: '#666', fontSize: 12 }}>
+                  Connecté en tant que <strong style={{ color: '#888' }}>{user.email}</strong>
+                </span>
+              </div>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
+                {isPro ? (
+                  <>
+                    <span style={{ color: '#4ade80', fontSize: 12, fontWeight: 700 }}>
+                      ✓ Abonnement Pro actif
+                    </span>
+                    <span style={{ color: '#444', fontSize: 11 }}>
+                      Expire le {new Date(user.expiryDate).toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' })}
+                    </span>
+                    {user.plan && (
+                      <span style={{ fontSize: 11, padding: '2px 8px', borderRadius: 6, background: 'rgba(201,168,76,0.1)', border: '1px solid rgba(201,168,76,0.2)', color: '#c9a84c', fontWeight: 700, textTransform: 'capitalize' }}>
+                        {user.plan === 'annual' ? 'Annuel' : 'Mensuel'}
+                      </span>
+                    )}
+                  </>
+                ) : (
+                  <>
+                    <span style={{ color: '#f87171', fontSize: 12, fontWeight: 700 }}>Abonnement expiré</span>
+                    <button onClick={() => navigate('/pricing')} style={{ fontSize: 11, padding: '4px 12px', borderRadius: 6, background: 'linear-gradient(135deg, #c9a84c, #a8823a)', border: 'none', color: '#000', fontWeight: 800, cursor: 'pointer' }}>
+                      Renouveler →
+                    </button>
+                  </>
+                )}
+              </div>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );

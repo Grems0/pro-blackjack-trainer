@@ -12,7 +12,7 @@ const FEATURES = [
   { label: 'Module Déviations (Illustrious 18 + Fab 4)', free: false, pro: true  },
   { label: 'Simulation Casino complète',                  free: false, pro: true  },
   { label: 'Statistiques EV',                             free: false, pro: true  },
-  { label: 'Mode révision type Anki',                     free: false, pro: true  },
+  { label: 'Mode révision type Anki',                     free: true,  pro: true  },
   { label: 'Parcours guidé recommandé',                   free: false, pro: true  },
 ];
 
