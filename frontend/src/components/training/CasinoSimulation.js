@@ -1,4 +1,4 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { ArrowLeft, BookOpen, X, Lock } from 'lucide-react';
 import { useProAccess } from '../../hooks/useProAccess';
@@ -552,6 +552,124 @@ function HandRow({ label, hand, size = 'sm', active = false, bet, outcome, visib
   );
 }
 
+// ─── Casino Results Screen ─────────────────────────────────────────────────────
+function CasinoResults({ stats, startBankroll, finalBankroll, timeSeconds, onReplay, onHome }) {
+  const totalDecisions = stats.correctPlays + stats.incorrectPlays;
+  const totalBets      = stats.correctBets  + stats.incorrectBets;
+  const playPct  = totalDecisions > 0 ? Math.round((stats.correctPlays / totalDecisions) * 100) : 0;
+  const betPct   = totalBets      > 0 ? Math.round((stats.correctBets  / totalBets)      * 100) : 0;
+  const pnl      = finalBankroll - startBankroll;
+  const pnlColor = pnl > 0 ? '#4ade80' : pnl < 0 ? '#f87171' : '#888';
+
+  const scoreColor = playPct >= 90 ? '#4ade80' : playPct >= 75 ? '#c9a84c' : playPct >= 50 ? '#f97316' : '#f87171';
+  const scoreLabel = playPct >= 90 ? 'Excellent' : playPct >= 75 ? 'Bien' : playPct >= 50 ? 'À améliorer' : 'À reprendre';
+
+  const formatTime = s => s >= 60 ? `${Math.floor(s/60)} min ${String(s%60).padStart(2,'0')} s` : `${s} s`;
+
+  return (
+    <div style={{ minHeight: '100vh', background: '#0a0a0a', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'flex-start', padding: '40px 16px 60px' }}>
+      <div style={{ width: '100%', maxWidth: 560 }}>
+
+        {/* Badge */}
+        <div style={{ textAlign: 'center', marginBottom: 4 }}>
+          <span style={{ display: 'inline-block', padding: '4px 14px', borderRadius: 20, background: 'rgba(201,168,76,0.1)', border: '1px solid rgba(201,168,76,0.3)', color: '#c9a84c', fontSize: 11, fontWeight: 700, letterSpacing: 1.5, textTransform: 'uppercase' }}>
+            Simulation Casino — Fin de session
+          </span>
+        </div>
+
+        {/* Score décisions */}
+        <div style={{ background: '#111', border: '1px solid #1e1e1e', borderRadius: 16, marginTop: 16, overflow: 'hidden' }}>
+          <div style={{ textAlign: 'center', padding: '32px 0 24px' }}>
+            <div style={{ fontSize: 80, fontWeight: 900, color: scoreColor, lineHeight: 1, letterSpacing: -2 }}>
+              {playPct}<span style={{ fontSize: 40 }}>%</span>
+            </div>
+            <div style={{ display: 'inline-block', marginTop: 10, padding: '3px 14px', background: `${scoreColor}18`, border: `1px solid ${scoreColor}50`, borderRadius: 20, color: scoreColor, fontSize: 12, fontWeight: 700, letterSpacing: 1, textTransform: 'uppercase' }}>
+              {scoreLabel} — Précision des décisions
+            </div>
+          </div>
+
+          {/* Pills décisions */}
+          <div style={{ display: 'flex', gap: 8, padding: '0 20px 20px', flexWrap: 'wrap' }}>
+            {[
+              { label: 'Correctes',   value: stats.correctPlays,   color: '#4ade80' },
+              { label: 'Erreurs',     value: stats.incorrectPlays, color: '#f87171' },
+              { label: 'Mains',       value: stats.hands,          color: '#e0e0e0' },
+              { label: 'Durée',       value: formatTime(timeSeconds), color: '#60a5fa' },
+            ].map(({ label, value, color }) => (
+              <div key={label} style={{ flex: 1, minWidth: 80, background: '#0e0e0e', border: '1px solid #1a1a1a', borderRadius: 10, padding: '12px 10px', textAlign: 'center' }}>
+                <p style={{ color, fontSize: 20, fontWeight: 900, margin: 0 }}>{value}</p>
+                <p style={{ color: '#444', fontSize: 10, fontWeight: 600, margin: '3px 0 0', textTransform: 'uppercase', letterSpacing: 1 }}>{label}</p>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* Résultats de table */}
+        <div style={{ marginTop: 12, background: '#111', border: '1px solid #1e1e1e', borderRadius: 14, padding: '16px 20px' }}>
+          <p style={{ color: '#444', fontSize: 10, fontWeight: 700, textTransform: 'uppercase', letterSpacing: 1, margin: '0 0 12px' }}>Résultats à la table</p>
+          <div style={{ display: 'flex', gap: 8 }}>
+            {[
+              { label: 'Victoires',  value: stats.wins,   color: '#4ade80' },
+              { label: 'Défaites',   value: stats.losses, color: '#f87171' },
+              { label: 'Égalités',   value: stats.pushes, color: '#888' },
+            ].map(({ label, value, color }) => (
+              <div key={label} style={{ flex: 1, background: '#0a0a0a', border: '1px solid #1a1a1a', borderRadius: 8, padding: '12px', textAlign: 'center' }}>
+                <p style={{ color, fontSize: 22, fontWeight: 900, margin: 0 }}>{value}</p>
+                <p style={{ color: '#444', fontSize: 10, margin: '3px 0 0', textTransform: 'uppercase', letterSpacing: 1 }}>{label}</p>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* Bankroll */}
+        <div style={{ marginTop: 12, background: '#111', border: '1px solid #1e1e1e', borderRadius: 14, padding: '16px 20px' }}>
+          <p style={{ color: '#444', fontSize: 10, fontWeight: 700, textTransform: 'uppercase', letterSpacing: 1, margin: '0 0 12px' }}>Bankroll</p>
+          <div style={{ display: 'flex', gap: 8 }}>
+            <div style={{ flex: 1, background: '#0a0a0a', border: '1px solid #1a1a1a', borderRadius: 8, padding: '12px', textAlign: 'center' }}>
+              <p style={{ color: '#888', fontSize: 22, fontWeight: 900, margin: 0 }}>{startBankroll}€</p>
+              <p style={{ color: '#444', fontSize: 10, margin: '3px 0 0', textTransform: 'uppercase', letterSpacing: 1 }}>Départ</p>
+            </div>
+            <div style={{ flex: 1, background: '#0a0a0a', border: '1px solid #1a1a1a', borderRadius: 8, padding: '12px', textAlign: 'center' }}>
+              <p style={{ color: '#c9a84c', fontSize: 22, fontWeight: 900, margin: 0 }}>{finalBankroll}€</p>
+              <p style={{ color: '#444', fontSize: 10, margin: '3px 0 0', textTransform: 'uppercase', letterSpacing: 1 }}>Finale</p>
+            </div>
+            <div style={{ flex: 1, background: '#0a0a0a', border: `1px solid ${pnlColor}25`, borderRadius: 8, padding: '12px', textAlign: 'center' }}>
+              <p style={{ color: pnlColor, fontSize: 22, fontWeight: 900, margin: 0 }}>{pnl >= 0 ? `+${pnl}` : pnl}€</p>
+              <p style={{ color: '#444', fontSize: 10, margin: '3px 0 0', textTransform: 'uppercase', letterSpacing: 1 }}>P&L</p>
+            </div>
+          </div>
+        </div>
+
+        {/* Paris */}
+        {totalBets > 0 && (
+          <div style={{ marginTop: 12, background: '#111', border: '1px solid #1e1e1e', borderRadius: 14, padding: '16px 20px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+            <div>
+              <p style={{ color: '#e0e0e0', fontWeight: 700, fontSize: 13, margin: '0 0 2px' }}>Précision des mises</p>
+              <p style={{ color: '#555', fontSize: 11, margin: 0 }}>{stats.correctBets} correctes · {stats.incorrectBets} incorrectes sur {totalBets} mains</p>
+            </div>
+            <span style={{ flexShrink: 0, padding: '4px 12px', borderRadius: 20, background: betPct >= 80 ? 'rgba(74,222,128,0.1)' : 'rgba(248,113,113,0.1)', border: `1px solid ${betPct >= 80 ? 'rgba(74,222,128,0.3)' : 'rgba(248,113,113,0.3)'}`, color: betPct >= 80 ? '#4ade80' : '#f87171', fontSize: 14, fontWeight: 900 }}>
+              {betPct}%
+            </span>
+          </div>
+        )}
+
+        {/* Boutons */}
+        <div style={{ display: 'flex', gap: 10, marginTop: 16 }}>
+          <button onClick={onReplay}
+            style={{ flex: 1, padding: 14, background: '#1a1a1a', border: '1px solid #2a2a2a', borderRadius: 12, color: '#fff', fontWeight: 700, fontSize: 14, cursor: 'pointer' }}>
+            ↺ Rejouer
+          </button>
+          <button onClick={onHome}
+            style={{ flex: 1, padding: 14, background: 'rgba(201,168,76,0.15)', border: '1px solid rgba(201,168,76,0.35)', borderRadius: 12, color: '#c9a84c', fontWeight: 700, fontSize: 14, cursor: 'pointer' }}>
+            Accueil
+          </button>
+        </div>
+
+      </div>
+    </div>
+  );
+}
+
 // ─── Main Component ───────────────────────────────────────────────────────────
 export default function CasinoSimulation() {
   const navigate = useNavigate();
@@ -570,7 +688,10 @@ export default function CasinoSimulation() {
   const [showChart,     setShowChart]     = useState(false);
   const [dealStep,      setDealStep]      = useState(999);
   const [showShoe,      setShowShoe]      = useState(false);
-  const dealAnimRef = useRef(null);
+  const [showResults,   setShowResults]   = useState(false);
+  const dealAnimRef  = useRef(null);
+  const sessionStart = useRef(null);
+  const [elapsed,       setElapsed]       = useState(0);
 
   const startDealAnimation = (total) => {
     if (dealAnimRef.current) clearInterval(dealAnimRef.current);
@@ -582,6 +703,12 @@ export default function CasinoSimulation() {
       if (step >= total) { clearInterval(dealAnimRef.current); dealAnimRef.current = null; }
     }, 350);
   };
+
+  useEffect(() => {
+    if (!sessionStart.current || showResults) return;
+    const iv = setInterval(() => setElapsed(Math.floor((Date.now() - sessionStart.current) / 1000)), 1000);
+    return () => clearInterval(iv);
+  }, [showResults, gs]);
 
   const tc = gs ? computeTC(gs.rc, gs.shoe) : 0;
   const discardCount = gs ? TOTAL_CARDS - gs.shoe.length : 0;
@@ -601,6 +728,9 @@ export default function CasinoSimulation() {
     setPendingHands(1);
     setWrongBetInfo(null);
     setWrongPlayInfo(null);
+    setShowResults(false);
+    setElapsed(0);
+    sessionStart.current = Date.now();
     setPhase('betting');
   };
 
@@ -772,6 +902,19 @@ export default function CasinoSimulation() {
   if (phase === 'config') return <ConfigScreen onStart={handleStart} />;
   if (!gs || !config) return null;
 
+  if (showResults) {
+    return (
+      <CasinoResults
+        stats={gs.stats}
+        startBankroll={startBankroll}
+        finalBankroll={gs.bankroll}
+        timeSeconds={elapsed}
+        onReplay={() => handleStart(config, betspread)}
+        onHome={() => navigate('/training')}
+      />
+    );
+  }
+
   const isPlaying = phase === 'playing';
   const activeHand = gs.playerHands[gs.activeHandIdx] || [];
 
@@ -860,6 +1003,12 @@ export default function CasinoSimulation() {
           <div className="flex items-center gap-3">
             <button onClick={() => setPhase('config')} className="p-2 rounded-lg bg-white/10 hover:bg-white/20 transition-colors">
               <ArrowLeft className="w-4 h-4 text-white" />
+            </button>
+            <button
+              onClick={() => { setElapsed(Math.floor((Date.now() - sessionStart.current) / 1000)); setShowResults(true); }}
+              disabled={gs.stats.hands === 0}
+              className="px-3 py-1.5 rounded-lg text-xs font-bold border transition-all bg-red-500/15 border-red-500/40 text-red-400 hover:bg-red-500/25 disabled:opacity-30 disabled:cursor-not-allowed">
+              Terminer
             </button>
             <div>
               <span className="text-white font-bold text-sm">Simulation Casino</span>
