@@ -773,9 +773,9 @@ export default function TrueCountTraining() {
       )}
 
       {/* Casino felt background */}
-      <div className="absolute inset-0" style={{
-        background: 'radial-gradient(ellipse at 50% 40%, #1a6b42 0%, #145233 40%, #0e3d26 100%)',
-      }}/>
+      <div style={{ position: 'absolute', inset: 0, background: 'radial-gradient(ellipse at 50% 60%, #1a5c35 0%, #0f3d22 50%, #071508 100%)' }}/>
+      <div style={{ position: 'absolute', inset: 0, opacity: 0.06, backgroundImage: "url(\"data:image/svg+xml,%3Csvg width='4' height='4' viewBox='0 0 4 4' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M1 3h1v1H1V3zm2-2h1v1H3V1z' fill='%23000' fill-opacity='1' fill-rule='evenodd'/%3E%3C/svg%3E\")" }}/>
+      <div style={{ position: 'absolute', bottom: -60, left: '50%', transform: 'translateX(-50%)', width: '120%', height: 200, borderRadius: '50% 50% 0 0 / 100% 100% 0 0', border: '3px solid rgba(201,168,76,0.2)', borderBottom: 'none', pointerEvents: 'none' }}/>
       {/* Subtle felt texture */}
       <div className="absolute inset-0" style={{
         backgroundImage: 'repeating-linear-gradient(45deg, rgba(0,0,0,0.03) 0px, rgba(0,0,0,0.03) 1px, transparent 1px, transparent 8px), repeating-linear-gradient(-45deg, rgba(0,0,0,0.03) 0px, rgba(0,0,0,0.03) 1px, transparent 1px, transparent 8px)',
