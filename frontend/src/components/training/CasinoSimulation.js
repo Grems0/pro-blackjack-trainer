@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { ArrowLeft, BookOpen, X, Lock } from 'lucide-react';
 import { useProAccess } from '../../hooks/useProAccess';
@@ -93,6 +93,21 @@ function getOptimalAction(hand, dealerUpCard, tc, cfg, isFirstAction) {
 function getOptimalBet(tc, bs) {
   return bs[Math.max(-2, Math.min(6, tc)).toString()] || 5;
 }
+// Returns the deal-sequence step index for a card (used for slide-in animation)
+// target: 'bot'|'player'|'dealer', handIdx: 0/1, cardIdx: 0/1
+function getCardStep(target, handIdx, cardIdx, numBots, numH) {
+  if (cardIdx === 0) {
+    if (target === 'bot')    return handIdx;
+    if (target === 'player') return numBots + handIdx;
+    if (target === 'dealer') return numBots + numH;
+  } else if (cardIdx === 1) {
+    const p2 = numBots + numH + 1;
+    if (target === 'bot')    return p2 + handIdx;
+    if (target === 'player') return p2 + numBots + handIdx;
+  }
+  return -1; // hit cards during gameplay always visible
+}
+
 function botPlayFull(hand, dk, shoe, rc, cfg) {
   let h = [...hand], s = [...shoe], r = rc;
   const hardT = cfg.isS17 ? basicStrategyHardENHCS17 : basicStrategyHardENHCH17;
@@ -486,10 +501,9 @@ function DiscardTray({ cardCount, total }) {
 }
 
 // ─── Card hand row ────────────────────────────────────────────────────────────
-function HandRow({ label, hand, size = 'sm', active = false, bet, outcome }) {
+function HandRow({ label, hand, size = 'sm', active = false, bet, outcome, visibleSteps, dealStep }) {
   const total = hand?.length ? calculateHandTotal(hand) : null;
   const bust  = total > 21;
-  // Explicit px dimensions to avoid invalid Tailwind class h-22
   const cardStyle = size === 'md'
     ? { width: 56, height: 80 }
     : size === 'lg'
@@ -503,11 +517,20 @@ function HandRow({ label, hand, size = 'sm', active = false, bet, outcome }) {
       </p>
       <div className="flex gap-2 justify-center items-end" style={{ minHeight: cardStyle.height }}>
         {hand?.length
-          ? hand.map((card, i) => (
-              <div key={i} style={{ width: cardStyle.width, height: cardStyle.height, flexShrink: 0 }}>
-                <PlayingCard card={card} size={size} />
-              </div>
-            ))
+          ? hand.map((card, i) => {
+              const step = visibleSteps?.[i] ?? -1;
+              const vis = step === -1 || dealStep > step;
+              return (
+                <div key={i} style={{
+                  width: cardStyle.width, height: cardStyle.height, flexShrink: 0,
+                  transition: 'all 0.35s cubic-bezier(0.34,1.56,0.64,1)',
+                  transform: vis ? 'translateY(0) scale(1)' : 'translateY(-50px) scale(0.6)',
+                  opacity: vis ? 1 : 0,
+                }}>
+                  <PlayingCard card={card} size={size} />
+                </div>
+              );
+            })
           : <div style={{ width: cardStyle.width, height: cardStyle.height }}
               className="rounded-lg border-2 border-dashed border-white/15 bg-white/5" />
         }
@@ -545,6 +568,19 @@ export default function CasinoSimulation() {
   const [startBankroll, setStartBankroll] = useState(0);
   const [showCounters,  setShowCounters]  = useState(false);
   const [showChart,     setShowChart]     = useState(false);
+  const [dealStep,      setDealStep]      = useState(999);
+  const dealAnimRef = useRef(null);
+
+  const startDealAnimation = (total) => {
+    if (dealAnimRef.current) clearInterval(dealAnimRef.current);
+    setDealStep(0);
+    let step = 0;
+    dealAnimRef.current = setInterval(() => {
+      step++;
+      setDealStep(step);
+      if (step >= total) { clearInterval(dealAnimRef.current); dealAnimRef.current = null; }
+    }, 350);
+  };
 
   const tc = gs ? computeTC(gs.rc, gs.shoe) : 0;
   const discardCount = gs ? TOTAL_CARDS - gs.shoe.length : 0;
@@ -618,6 +654,8 @@ export default function CasinoSimulation() {
       stats: { ...stats, hands: stats.hands + 1, [betCorrect ? 'correctBets' : 'incorrectBets']: stats[betCorrect ? 'correctBets' : 'incorrectBets'] + 1 },
     });
     setWrongBetInfo(null);
+    // numBots * 2 cards + numH * 2 cards + 1 dealer card
+    startDealAnimation(cfg.numBots * 2 + numH * 2 + 1);
     setPhase('playing');
   };
 
@@ -725,6 +763,7 @@ export default function CasinoSimulation() {
     setGs(newGs);
     setCurrentBet(0);
     setPendingHands(1);
+    setDealStep(999);
     setPhase('betting');
   };
 
@@ -888,11 +927,20 @@ export default function CasinoSimulation() {
                 <p className="text-gray-300 text-xs uppercase tracking-widest mb-2 font-semibold">Croupier</p>
                 <div className="flex gap-2 justify-center items-end" style={{ minHeight: 80 }}>
                   {gs.dealerHand.length > 0
-                    ? gs.dealerHand.map((card, i) => (
-                        <div key={i} style={{ width: 56, height: 80, flexShrink: 0 }}>
-                          <PlayingCard card={card} size="md" />
-                        </div>
-                      ))
+                    ? gs.dealerHand.map((card, i) => {
+                        const step = getCardStep('dealer', 0, i, config.numBots, gs.playerHands.length);
+                        const vis = step === -1 || dealStep > step;
+                        return (
+                          <div key={i} style={{
+                            width: 56, height: 80, flexShrink: 0,
+                            transition: 'all 0.35s cubic-bezier(0.34,1.56,0.64,1)',
+                            transform: vis ? 'translateY(0) scale(1)' : 'translateY(-50px) scale(0.6)',
+                            opacity: vis ? 1 : 0,
+                          }}>
+                            <PlayingCard card={card} size="md" />
+                          </div>
+                        );
+                      })
                     : <div style={{ width: 56, height: 80 }} className="rounded-lg border-2 border-dashed border-white/20 bg-white/5" />
                   }
                 </div>
@@ -918,11 +966,20 @@ export default function CasinoSimulation() {
                   <p className="text-gray-500 text-[10px] uppercase tracking-wide mb-1.5">Joueur A</p>
                   <div className="flex gap-1 items-end" style={{ minHeight: 60 }}>
                     {gs.botHands[0]?.length > 0
-                      ? gs.botHands[0].map((card, i) => (
-                          <div key={i} style={{ width: 40, height: 56, flexShrink: 0 }}>
-                            <PlayingCard card={card} size="sm" />
-                          </div>
-                        ))
+                      ? gs.botHands[0].map((card, i) => {
+                          const step = getCardStep('bot', 0, i, config.numBots, gs.playerHands.length);
+                          const vis = step === -1 || dealStep > step;
+                          return (
+                            <div key={i} style={{
+                              width: 40, height: 56, flexShrink: 0,
+                              transition: 'all 0.35s cubic-bezier(0.34,1.56,0.64,1)',
+                              transform: vis ? 'translateY(0) scale(1)' : 'translateY(-50px) scale(0.6)',
+                              opacity: vis ? 1 : 0,
+                            }}>
+                              <PlayingCard card={card} size="sm" />
+                            </div>
+                          );
+                        })
                       : <div style={{ width: 40, height: 56 }} className="rounded border border-dashed border-white/10" />
                     }
                   </div>
@@ -945,6 +1002,10 @@ export default function CasinoSimulation() {
                     if (pt === gs.roundResult.dealerTotal) return 'push';
                     return 'lose';
                   })() : null;
+                  const visibleSteps = [
+                    getCardStep('player', idx, 0, config.numBots, gs.playerHands.length),
+                    getCardStep('player', idx, 1, config.numBots, gs.playerHands.length),
+                  ];
                   return (
                     <HandRow key={idx}
                       label={gs.playerHands.length > 1 ? `Main ${idx + 1}` : 'Votre main'}
@@ -953,6 +1014,8 @@ export default function CasinoSimulation() {
                       active={isAct}
                       bet={gs.playerBets[idx]}
                       outcome={outcome}
+                      visibleSteps={visibleSteps}
+                      dealStep={dealStep}
                     />
                   );
                 })}
@@ -964,11 +1027,20 @@ export default function CasinoSimulation() {
                   <p className="text-gray-500 text-[10px] uppercase tracking-wide mb-1.5">Joueur B</p>
                   <div className="flex gap-1 items-end" style={{ minHeight: 60 }}>
                     {gs.botHands[1]?.length > 0
-                      ? gs.botHands[1].map((card, i) => (
-                          <div key={i} style={{ width: 40, height: 56, flexShrink: 0 }}>
-                            <PlayingCard card={card} size="sm" />
-                          </div>
-                        ))
+                      ? gs.botHands[1].map((card, i) => {
+                          const step = getCardStep('bot', 1, i, config.numBots, gs.playerHands.length);
+                          const vis = step === -1 || dealStep > step;
+                          return (
+                            <div key={i} style={{
+                              width: 40, height: 56, flexShrink: 0,
+                              transition: 'all 0.35s cubic-bezier(0.34,1.56,0.64,1)',
+                              transform: vis ? 'translateY(0) scale(1)' : 'translateY(-50px) scale(0.6)',
+                              opacity: vis ? 1 : 0,
+                            }}>
+                              <PlayingCard card={card} size="sm" />
+                            </div>
+                          );
+                        })
                       : <div style={{ width: 40, height: 56 }} className="rounded border border-dashed border-white/10" />
                     }
                   </div>
