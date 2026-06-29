@@ -172,9 +172,10 @@ export default function RunningCountTraining() {
   const [showChart, setShowChart] = useState(false);
   const [showProMsg, setShowProMsg] = useState(false);
 
-  const moduleConfig = currentModule?.config || {};
-  const dealDelay  = moduleConfig.speed ? (11 - moduleConfig.speed) * 200 : 500;
-  const askEveryN  = moduleConfig.askEvery || 4;
+  const savedConfig  = JSON.parse(localStorage.getItem('trainingModuleConfig') || '{}');
+  const moduleConfig = currentModule?.config || savedConfig.config || {};
+  const dealDelay    = moduleConfig.speed ? (11 - moduleConfig.speed) * 200 : 500;
+  const askEveryN    = moduleConfig.askEvery || 4;
   const totalDecks = tableRules.numberOfDecks;
 
   // ── State du jeu ──────────────────────────────────────────────────────────
