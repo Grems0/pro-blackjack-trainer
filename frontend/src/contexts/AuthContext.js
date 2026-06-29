@@ -85,7 +85,10 @@ export function AuthProvider({ children }) {
         .eq('email', emailLower)
         .single();
 
-      if (error || !data) return 'Aucun compte trouvé pour cet email.';
+      console.log('Supabase login result:', { data, error });
+
+      if (error) return `Erreur Supabase: ${error.message}`;
+      if (!data) return 'Aucun compte trouvé pour cet email.';
 
       if (data.password !== hashed) return 'Mot de passe incorrect.';
 
