@@ -257,7 +257,23 @@ export default function DeviationsTraining() {
 
   // ─── Drill ────────────────────────────────────────────────────────────────
   return (
-    <div className="min-h-screen bg-gradient-to-b from-[#1a472a] to-[#0d2818] relative">
+    <div className="min-h-screen relative" style={{ background: '#050a06' }}>
+      {/* Vidéo croupier en fond */}
+      <video
+        src="/videos/deal.mp4"
+        autoPlay loop muted playsInline
+        style={{
+          position: 'fixed', inset: 0, width: '100%', height: '100%',
+          objectFit: 'cover', objectPosition: 'center top',
+          zIndex: 0, opacity: 0.35,
+          filter: 'brightness(0.7) saturate(0.85)',
+        }}
+      />
+      <div style={{
+        position: 'fixed', inset: 0, zIndex: 1,
+        background: 'linear-gradient(to bottom, rgba(0,0,0,0.55) 0%, rgba(0,6,0,0.72) 100%)',
+      }}/>
+
       {showChart && (
         <div className="fixed inset-0 z-50 flex items-start justify-center bg-black/80 backdrop-blur-sm overflow-y-auto py-6 px-4">
           <div className="bg-[#1a1a1d] rounded-2xl border border-gray-700 w-full max-w-lg relative">
@@ -268,10 +284,6 @@ export default function DeviationsTraining() {
           </div>
         </div>
       )}
-
-      <div className="absolute inset-0 opacity-20" style={{
-        backgroundImage: `url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23000000' fill-opacity='0.4'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E")`
-      }} />
 
       {/* Header */}
       <header className="relative z-10 bg-black/30 backdrop-blur-sm border-b border-white/10 px-6 py-4">
