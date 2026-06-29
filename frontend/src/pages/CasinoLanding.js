@@ -106,9 +106,16 @@ function EntranceScene({ onChoose }) {
           <p style={{
             color: hovered === 'toilet' ? 'rgba(200,225,255,0.7)' : 'rgba(180,210,240,0.25)',
             fontSize: 13, fontFamily: 'Georgia, serif', fontStyle: 'italic',
-            margin: 0, transition: 'color 0.3s',
+            margin: '0 0 6px', transition: 'color 0.3s',
           }}>
             ← Couloir du fond
+          </p>
+          <p style={{
+            color: hovered === 'toilet' ? 'rgba(201,168,76,0.8)' : 'rgba(201,168,76,0.3)',
+            fontSize: 11, fontFamily: 'Georgia, serif',
+            margin: 0, transition: 'color 0.3s', letterSpacing: '0.05em',
+          }}>
+            Quelqu'un veut vous parler...
           </p>
         </div>
       </div>
