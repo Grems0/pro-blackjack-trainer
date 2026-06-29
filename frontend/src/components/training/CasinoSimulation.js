@@ -818,6 +818,7 @@ export default function CasinoSimulation() {
     if (action === 'S') { return advance({ ...cur, shoe, rc, bankroll, playerHands: hands, playerBets: bets }, activeHandIdx); }
 
     if (action === 'P') {
+      if (bankroll < bet) return; // not enough to cover the split
       const c1 = draw(), c2 = draw();
       hands.splice(activeHandIdx, 1, [hand[0], c1], [hand[1], c2]);
       bets.splice(activeHandIdx, 1, bet, bet);
@@ -827,6 +828,7 @@ export default function CasinoSimulation() {
 
     if (action === 'D') {
       if (bankroll >= bet) { bankroll -= bet; bets[activeHandIdx] = bet * 2; }
+      // else: fall back to hitting without doubling the bet
       hands[activeHandIdx] = [...hand, draw()];
     } else {
       hands[activeHandIdx] = [...hand, draw()];

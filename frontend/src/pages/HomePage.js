@@ -101,7 +101,7 @@ export default function HomePage() {
                 </button>
                 
                 <button
-                  onClick={resetToDefaults}
+                  onClick={() => { if (window.confirm(t('btn_reset') + ' ?')) resetToDefaults(); }}
                   className="w-full py-3 border border-red-500 text-red-500 hover:bg-red-500/10 font-semibold rounded-lg transition-colors flex items-center justify-center gap-2"
                 >
                   <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">

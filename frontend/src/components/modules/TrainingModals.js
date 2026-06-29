@@ -1,5 +1,6 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { X } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 import { useGame } from '../../contexts/GameContext';
 import { Slider } from '../ui/slider';
 import {
@@ -12,18 +13,27 @@ import {
 
 export default function TrainingModals() {
   const { showModal, setShowModal, setCurrentModule, startTraining, initializeDeck, tableRules } = useGame();
-  
-  if (!showModal) return null;
-  
+  const navigate = useNavigate();
+
+  // Redirect to casino simulation without a modal (triggered when showModal = 'in-casino')
+  useEffect(() => {
+    if (showModal === 'in-casino') {
+      setShowModal(null);
+      navigate('/training/in-casino');
+    }
+  }, [showModal, setShowModal, navigate]);
+
+  if (!showModal || showModal === 'in-casino') return null;
+
   const handleStartModule = (moduleId, config) => {
     setCurrentModule({ id: moduleId, config });
     localStorage.setItem('trainingModuleConfig', JSON.stringify({ id: moduleId, config }));
     initializeDeck();
     startTraining();
     setShowModal(null);
-    window.location.href = `/training/${moduleId}`;
+    navigate(`/training/${moduleId}`);
   };
-  
+
   const renderModal = () => {
     switch (showModal) {
       case 'running-count':
@@ -34,9 +44,6 @@ export default function TrainingModals() {
         return <BasicStrategyModal onStart={handleStartModule} onClose={() => setShowModal(null)} />;
       case 'deviations':
         return <DeviationsModal onStart={handleStartModule} onClose={() => setShowModal(null)} />;
-      case 'in-casino':
-        window.location.href = '/training/in-casino';
-        return null;
       default:
         return null;
     }

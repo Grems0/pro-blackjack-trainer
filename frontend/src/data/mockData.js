@@ -424,16 +424,22 @@ export const calculateHandTotal = (cards) => {
   return total;
 };
 
-// Check if hand is soft
+// Check if hand is soft (at least one ace still counting as 11)
 export const isSoftHand = (cards) => {
   let total = 0;
   let aces = 0;
-  
+
   for (const card of cards) {
-    const value = getCardValue(card);
-    total += value;
+    total += getCardValue(card);
     if (card.value === 'A') aces++;
   }
-  
+
+  // Mirror the ace-reduction logic of calculateHandTotal
+  while (total > 21 && aces > 0) {
+    total -= 10;
+    aces--;
+  }
+
+  // Soft = at least one ace still counted as 11, and not bust
   return aces > 0 && total <= 21;
 };
