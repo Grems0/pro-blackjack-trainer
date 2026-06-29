@@ -15,7 +15,7 @@ export default function LoginPage() {
     e.preventDefault();
     const err = await login(email.trim(), password);
     if (err) { setError(err); return; }
-    navigate('/');
+    navigate('/training');
   };
 
   return (

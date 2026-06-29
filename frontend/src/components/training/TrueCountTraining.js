@@ -750,7 +750,7 @@ export default function TrueCountTraining() {
         timeSeconds={timer}
         rcMistakes={rcMistakes}
         onReplay={restart}
-        onHome={() => navigate('/')}
+        onHome={() => navigate('/training')}
       />
     );
   }
@@ -787,7 +787,7 @@ export default function TrueCountTraining() {
       <header className="relative z-10 bg-black/40 backdrop-blur-sm px-6 py-4 border-b border-white/5">
         <div className="max-w-5xl mx-auto flex items-center justify-between">
           <div className="flex items-center gap-4">
-            <button onClick={() => navigate('/')} className="p-2 rounded-lg bg-white/10 hover:bg-white/20 transition-colors">
+            <button onClick={() => navigate('/training')} className="p-2 rounded-lg bg-white/10 hover:bg-white/20 transition-colors">
               <ArrowLeft className="w-5 h-5 text-white"/>
             </button>
             <div>

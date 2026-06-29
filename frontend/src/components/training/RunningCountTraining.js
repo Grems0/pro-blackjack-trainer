@@ -389,7 +389,7 @@ export default function RunningCountTraining() {
         timeSeconds={timer}
         rcMistakes={rcMistakes}
         onReplay={resetGame}
-        onHome={() => navigate('/')}
+        onHome={() => navigate('/training')}
       />
     );
   }
@@ -451,7 +451,7 @@ export default function RunningCountTraining() {
         <div className="max-w-6xl mx-auto flex items-center justify-between">
           <div className="flex items-center gap-4">
             <button
-              onClick={() => navigate('/')}
+              onClick={() => navigate('/training')}
               className="p-2 rounded-lg bg-white/10 hover:bg-white/20 transition-colors"
             >
               <ArrowLeft className="w-5 h-5 text-white" />

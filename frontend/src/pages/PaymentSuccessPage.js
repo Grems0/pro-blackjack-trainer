@@ -22,7 +22,7 @@ export default function PaymentSuccessPage() {
   // Countdown après création de compte
   useEffect(() => {
     if (!done) return;
-    if (countdown <= 0) { navigate('/'); return; }
+    if (countdown <= 0) { navigate('/training'); return; }
     const t = setTimeout(() => setCountdown(c => c - 1), 1000);
     return () => clearTimeout(t);
   }, [done, countdown, navigate]);
@@ -85,7 +85,7 @@ export default function PaymentSuccessPage() {
           </p>
 
           <button
-            onClick={() => navigate('/')}
+            onClick={() => navigate('/training')}
             style={{ padding: '13px 36px', borderRadius: 12, background: 'linear-gradient(135deg, #c9a84c, #a8823a)', border: 'none', color: '#000', fontWeight: 800, fontSize: 14, cursor: 'pointer' }}
           >
             Commencer maintenant →

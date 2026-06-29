@@ -10,7 +10,7 @@ export default function Header() {
 
   const handleLogout = () => {
     logout();
-    navigate('/');
+    navigate('/training');
   };
 
   const expiryStr = user?.expiryDate
@@ -20,7 +20,7 @@ export default function Header() {
   return (
     <header className="bg-[#1a1a1d] border-b border-gray-800 px-6 py-3">
       <div className="flex items-center justify-between max-w-7xl mx-auto">
-        <Link to="/" className="flex items-center gap-3 hover:opacity-80 transition-opacity">
+        <Link to="/training" className="flex items-center gap-3 hover:opacity-80 transition-opacity">
           <div className="w-10 h-10 bg-gradient-to-br from-emerald-500 to-emerald-700 rounded-lg flex items-center justify-center">
             <span className="text-white font-bold text-lg">♠</span>
           </div>

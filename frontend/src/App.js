@@ -4,6 +4,7 @@ import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { GameProvider } from "./contexts/GameContext";
 import { AuthProvider } from "./contexts/AuthContext";
 import HomePage from "./pages/HomePage";
+import CasinoLanding from "./pages/CasinoLanding";
 import ChartsPage from "./pages/ChartsPage";
 import RunningCountTraining from "./components/training/RunningCountTraining";
 import TrueCountTraining from "./components/training/TrueCountTraining";
@@ -24,7 +25,8 @@ function App() {
         <div className="App">
           <BrowserRouter>
             <Routes>
-              <Route path="/" element={<HomePage />} />
+              <Route path="/" element={<CasinoLanding />} />
+              <Route path="/training" element={<HomePage />} />
               <Route path="/login" element={<LoginPage />} />
               <Route path="/pricing" element={<PricingPage />} />
               <Route path="/payment/success" element={<PaymentSuccessPage />} />
