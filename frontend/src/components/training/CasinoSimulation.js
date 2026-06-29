@@ -397,7 +397,7 @@ function ConfigScreen({ onStart }) {
 }
 
 // ─── Shoe SVG (style casino acrylique) ────────────────────────────────────────
-function ShoeDisplay({ remaining, total }) {
+function ShoeDisplay({ remaining, total, showCounts }) {
   const pct   = remaining / total;
   const W = 72, H = 140;
   const padX = 8, baseH = 12;
@@ -446,14 +446,14 @@ function ShoeDisplay({ remaining, total }) {
         <line x1={padX} y1={4} x2={4} y2={10} stroke="rgba(180,220,255,0.25)" strokeWidth={1} />
         <line x1={W - padX} y1={4} x2={W - 4} y2={10} stroke="rgba(180,220,255,0.25)" strokeWidth={1} />
       </svg>
-      <p className="text-white font-black text-base leading-none">{remaining}</p>
-      <p className="text-gray-400 text-[10px]">cartes · {(remaining / 52).toFixed(1)} jeux</p>
+      {showCounts && <p className="text-white font-black text-base leading-none">{remaining}</p>}
+      {showCounts && <p className="text-gray-400 text-[10px]">cartes · {(remaining / 52).toFixed(1)} jeux</p>}
     </div>
   );
 }
 
 // ─── Discard Tray SVG ──────────────────────────────────────────────────────────
-function DiscardTray({ cardCount, total }) {
+function DiscardTray({ cardCount, total, showCounts }) {
   const pct   = cardCount / total;
   const W = 72, H = 140;
   const padX = 8, baseH = 12;
@@ -494,8 +494,8 @@ function DiscardTray({ cardCount, total }) {
         <line x1={padX} y1={4} x2={4} y2={10} stroke="rgba(180,220,255,0.2)" strokeWidth={1} />
         <line x1={W - padX} y1={4} x2={W - 4} y2={10} stroke="rgba(180,220,255,0.2)" strokeWidth={1} />
       </svg>
-      <p className="text-white font-black text-base leading-none">{cardCount}</p>
-      <p className="text-gray-400 text-[10px]">cartes · {(cardCount / 52).toFixed(1)} jeux</p>
+      {showCounts && <p className="text-white font-black text-base leading-none">{cardCount}</p>}
+      {showCounts && <p className="text-gray-400 text-[10px]">cartes · {(cardCount / 52).toFixed(1)} jeux</p>}
     </div>
   );
 }
@@ -569,6 +569,7 @@ export default function CasinoSimulation() {
   const [showCounters,  setShowCounters]  = useState(false);
   const [showChart,     setShowChart]     = useState(false);
   const [dealStep,      setDealStep]      = useState(999);
+  const [showShoe,      setShowShoe]      = useState(false);
   const dealAnimRef = useRef(null);
 
   const startDealAnimation = (total) => {
@@ -893,6 +894,14 @@ export default function CasinoSimulation() {
                 }`}>
                 {showCounters ? 'Cacher' : 'Voir'}
               </button>
+              <button onClick={() => setShowShoe(p => !p)}
+                className={`px-2 py-1 rounded-lg text-[10px] font-bold border transition-all ${
+                  showShoe
+                    ? 'bg-emerald-500/30 border-emerald-500/50 text-emerald-300'
+                    : 'bg-white/5 border-white/10 text-gray-500 hover:text-gray-300'
+                }`}>
+                {showShoe ? '🂠 Sabot ON' : '🂠 Sabot OFF'}
+              </button>
             </div>
             <div className="text-center border-l border-white/10 pl-4">
               <p className="text-gray-500 text-xs">Bankroll</p>
@@ -920,7 +929,7 @@ export default function CasinoSimulation() {
 
             {/* ── DEALER (haut, centré) ── */}
             <div className="flex items-start justify-between mb-4">
-              <DiscardTray cardCount={discardCount} total={TOTAL_CARDS} />
+              <DiscardTray cardCount={discardCount} total={TOTAL_CARDS} showCounts={showShoe} />
 
               {/* Dealer au centre */}
               <div className="flex-1 flex flex-col items-center px-4">
@@ -951,7 +960,7 @@ export default function CasinoSimulation() {
                 )}
               </div>
 
-              <ShoeDisplay remaining={gs.shoe.length} total={TOTAL_CARDS} />
+              <ShoeDisplay remaining={gs.shoe.length} total={TOTAL_CARDS} showCounts={showShoe} />
             </div>
 
             {/* ── Divider ── */}
