@@ -32,7 +32,7 @@ function realisticRC(cardsInTray) {
 }
 
 // ─── Card Shoe (sabot) SVG — transparent acrylic, 3/4 perspective ──────────
-function CardShoe({ cardsRemaining }) {
+function CardShoe({ cardsRemaining, showHelpers }) {
   const fill = cardsRemaining / TOTAL_CARDS;
 
   const F = { tl: [30, 52], tr: [170, 52], br: [166, 310], bl: [34, 310] };
@@ -183,8 +183,8 @@ function CardShoe({ cardsRemaining }) {
         <circle cx={F.tl[0]+1} cy={F.tl[1]+1} r={2.5} fill="rgba(255,255,255,0.7)"/>
         <circle cx={F.tr[0]-1} cy={F.tr[1]+1} r={2.5} fill="rgba(255,255,255,0.45)"/>
 
-        {/* Deck markers */}
-        {deckMarkers.map(({ n, y, color }) => {
+        {/* Deck markers — masqués si showHelpers=false */}
+        {showHelpers && deckMarkers.map(({ n, y, color }) => {
           const isActive = stackTop > 0 && stackTop <= y && (n === 5 ? true : stackTop > deckMarkers.find(m => m.n === n + 1)?.y);
           return (
             <g key={n}>
@@ -196,23 +196,25 @@ function CardShoe({ cardsRemaining }) {
         })}
       </svg>
 
-      <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4 }}>
-        <p style={{ color: 'rgba(255,255,255,0.25)', fontSize: 10, margin: 0, letterSpacing: '0.08em' }}>
-          {cardsRemaining} cartes restantes · {(cardsRemaining / 52).toFixed(1)} jeux
-        </p>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 6, background: `${zoneColor}12`, border: `1px solid ${zoneColor}35`, borderRadius: 8, padding: '4px 10px' }}>
-          <div style={{ width: 6, height: 6, borderRadius: '50%', background: zoneColor }}/>
-          <span style={{ color: zoneColor, fontSize: 11, fontWeight: 700 }}>
-            ~{exactDecksRemaining.toFixed(1)} jeux dans le sabot
-          </span>
+      {showHelpers && (
+        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4 }}>
+          <p style={{ color: 'rgba(255,255,255,0.25)', fontSize: 10, margin: 0, letterSpacing: '0.08em' }}>
+            {cardsRemaining} cartes restantes · {(cardsRemaining / 52).toFixed(1)} jeux
+          </p>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 6, background: `${zoneColor}12`, border: `1px solid ${zoneColor}35`, borderRadius: 8, padding: '4px 10px' }}>
+            <div style={{ width: 6, height: 6, borderRadius: '50%', background: zoneColor }}/>
+            <span style={{ color: zoneColor, fontSize: 11, fontWeight: 700 }}>
+              ~{exactDecksRemaining.toFixed(1)} jeux dans le sabot
+            </span>
+          </div>
         </div>
-      </div>
+      )}
     </div>
   );
 }
 
 // ─── Casino Discard Tray — photo-realistic ───────────────────────────────────
-function DiscardTray({ cardsInTray }) {
+function DiscardTray({ cardsInTray, showHelpers }) {
   const pts = (...coords) => coords.map(([x, y]) => `${x},${y}`).join(' ');
 
   // ── Geometry — tall tray, clear 3/4 perspective ──
@@ -520,23 +522,19 @@ function DiscardTray({ cardsInTray }) {
           stroke="rgba(255,255,255,0.08)" strokeWidth="3" strokeLinecap="round"/>
 
         {/* ══ DECK MARKERS (etched into acrylic, shown on inner wall edges) ══ */}
-        {deckMarkers.map(({ n, y, color, decksLeft, isActive }) => (
+        {showHelpers && deckMarkers.map(({ n, y, color, decksLeft, isActive }) => (
           <g key={n}>
-            {/* Zone highlight band when active */}
             {isActive && (
               <rect x={iL+1} y={y} width={iW-2} height={Math.min(28, iB - y)}
                 fill={color} opacity={0.05} rx={1}/>
             )}
-            {/* Etched marker line across inner width */}
             <line x1={iL+1} y1={y} x2={iR-1} y2={y}
               stroke={color}
               strokeWidth={isActive ? 1.4 : 0.8}
               strokeDasharray={isActive ? '6,2.5' : '3.5,3'}
               opacity={isActive ? 0.95 : 0.4}/>
-            {/* Small notch on left wall */}
             <rect x={oL+1} y={y-2} width={W-2} height={4}
               fill={color} opacity={isActive ? 0.6 : 0.25} rx={1}/>
-            {/* Label */}
             <text x={iL+6} y={y-3}
               fontSize={isActive ? 9.5 : 7.5}
               fontWeight={isActive ? '900' : '600'}
@@ -545,53 +543,51 @@ function DiscardTray({ cardsInTray }) {
               style={{ letterSpacing: '0.04em', fontFamily: 'monospace' }}>
               {decksLeft}J↑
             </text>
-            {/* Right-side marker dot */}
             <circle cx={iR-4} cy={y} r={isActive ? 2.5 : 1.5}
               fill={color} opacity={isActive ? 0.9 : 0.35}/>
           </g>
         ))}
       </svg>
 
-      {/* Indicator below SVG */}
-      <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4 }}>
-        <p style={{ color: 'rgba(255,255,255,0.25)', fontSize: 10, margin: 0, fontVariantNumeric: 'tabular-nums', letterSpacing: '0.08em' }}>
-          {cardsInTray} cartes · {(cardsInTray / 52).toFixed(1)} jeux défaussés
-        </p>
-
-        {/* Deck progress bar */}
-        <div style={{ width: 210, background: '#151515', borderRadius: 6, overflow: 'hidden', border: '1px solid #222' }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', padding: '3px 7px 0' }}>
-            {[6,5,4,3,2,1,0].map(n => (
-              <span key={n} style={{ fontSize: 8, color: '#2e2e2e', fontWeight: 700 }}>{n}</span>
-            ))}
-          </div>
-          <div style={{ position: 'relative', height: 11, margin: '2px 7px 5px' }}>
-            <div style={{ position: 'absolute', inset: 0, display: 'flex', borderRadius: 4, overflow: 'hidden' }}>
-              {[...Array(6)].map((_, i) => (
-                <div key={i} style={{
-                  flex: 1,
-                  background: i < 2 ? 'rgba(248,113,113,0.12)' : i < 4 ? 'rgba(201,168,76,0.12)' : 'rgba(74,222,128,0.12)',
-                  borderRight: i < 5 ? '1px solid #1e1e1e' : 'none',
-                }}/>
+      {/* Indicateurs masquables */}
+      {showHelpers && (
+        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4 }}>
+          <p style={{ color: 'rgba(255,255,255,0.25)', fontSize: 10, margin: 0, fontVariantNumeric: 'tabular-nums', letterSpacing: '0.08em' }}>
+            {cardsInTray} cartes · {(cardsInTray / 52).toFixed(1)} jeux défaussés
+          </p>
+          <div style={{ width: 210, background: '#151515', borderRadius: 6, overflow: 'hidden', border: '1px solid #222' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', padding: '3px 7px 0' }}>
+              {[6,5,4,3,2,1,0].map(n => (
+                <span key={n} style={{ fontSize: 8, color: '#2e2e2e', fontWeight: 700 }}>{n}</span>
               ))}
             </div>
-            <div style={{
-              position: 'absolute', top: 0, bottom: 0,
-              left: `${(exactDecksRemaining / 6) * 100}%`,
-              width: 3, background: zoneColor, borderRadius: 2,
-              boxShadow: `0 0 7px ${zoneColor}80`,
-              transform: 'translateX(-50%)',
-            }}/>
+            <div style={{ position: 'relative', height: 11, margin: '2px 7px 5px' }}>
+              <div style={{ position: 'absolute', inset: 0, display: 'flex', borderRadius: 4, overflow: 'hidden' }}>
+                {[...Array(6)].map((_, i) => (
+                  <div key={i} style={{
+                    flex: 1,
+                    background: i < 2 ? 'rgba(248,113,113,0.12)' : i < 4 ? 'rgba(201,168,76,0.12)' : 'rgba(74,222,128,0.12)',
+                    borderRight: i < 5 ? '1px solid #1e1e1e' : 'none',
+                  }}/>
+                ))}
+              </div>
+              <div style={{
+                position: 'absolute', top: 0, bottom: 0,
+                left: `${(exactDecksRemaining / 6) * 100}%`,
+                width: 3, background: zoneColor, borderRadius: 2,
+                boxShadow: `0 0 7px ${zoneColor}80`,
+                transform: 'translateX(-50%)',
+              }}/>
+            </div>
+          </div>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 6, background: `${zoneColor}12`, border: `1px solid ${zoneColor}30`, borderRadius: 8, padding: '4px 12px' }}>
+            <div style={{ width: 6, height: 6, borderRadius: '50%', background: zoneColor, boxShadow: `0 0 5px ${zoneColor}` }}/>
+            <span style={{ color: zoneColor, fontSize: 11, fontWeight: 700 }}>
+              Zone {zoneLow}–{zoneHigh} jeux restants
+            </span>
           </div>
         </div>
-
-        <div style={{ display: 'flex', alignItems: 'center', gap: 6, background: `${zoneColor}12`, border: `1px solid ${zoneColor}30`, borderRadius: 8, padding: '4px 12px' }}>
-          <div style={{ width: 6, height: 6, borderRadius: '50%', background: zoneColor, boxShadow: `0 0 5px ${zoneColor}` }}/>
-          <span style={{ color: zoneColor, fontSize: 11, fontWeight: 700 }}>
-            Zone {zoneLow}–{zoneHigh} jeux restants
-          </span>
-        </div>
-      </div>
+      )}
     </div>
   );
 }
@@ -699,14 +695,15 @@ export default function TrueCountTraining() {
   const tcMethod  = additionalSettings?.trueCountMethod         || 'truncate';
   const step      = precisionStep(precision);
 
-  const [timer,       setTimer]       = useState(0);
-  const [running,     setRunning]     = useState(true);
-  const [stats,       setStats]       = useState({ correct: 0, total: 0 });
-  const [screen,      setScreen]      = useState('question');
-  const [userAnswer,  setUserAnswer]  = useState(0);
-  const [scenario,    setScenario]    = useState(null);
-  const [rcMistakes,  setRcMistakes]  = useState([]);
-  const [showResults, setShowResults] = useState(false);
+  const [timer,        setTimer]       = useState(0);
+  const [running,      setRunning]     = useState(true);
+  const [stats,        setStats]       = useState({ correct: 0, total: 0 });
+  const [screen,       setScreen]      = useState('question');
+  const [userAnswer,   setUserAnswer]  = useState(0);
+  const [scenario,     setScenario]    = useState(null);
+  const [rcMistakes,   setRcMistakes]  = useState([]);
+  const [showResults,  setShowResults] = useState(false);
+  const [showHelpers,  setShowHelpers] = useState(true);
 
   const generate = useCallback(() => {
     const step26      = Math.floor(Math.random() * 11) + 1;
@@ -813,6 +810,25 @@ export default function TrueCountTraining() {
             <button onClick={() => { setRunning(false); setShowResults(true); }} disabled={stats.total === 0} className="px-3 py-2 rounded-lg bg-red-500/20 hover:bg-red-500/30 border border-red-500/40 text-red-300 text-sm font-semibold transition-colors disabled:opacity-30 disabled:cursor-not-allowed">
               Terminer
             </button>
+            <button
+              onClick={() => setShowHelpers(h => !h)}
+              className="flex items-center gap-2 px-3 py-2 rounded-lg border transition-colors"
+              style={{
+                background: showHelpers ? 'rgba(96,165,250,0.15)' : 'rgba(255,255,255,0.06)',
+                borderColor: showHelpers ? 'rgba(96,165,250,0.4)' : 'rgba(255,255,255,0.1)',
+              }}
+              title={showHelpers ? 'Masquer les indicateurs' : 'Afficher les indicateurs'}
+            >
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke={showHelpers ? '#60a5fa' : '#555'} strokeWidth="2" strokeLinecap="round">
+                {showHelpers
+                  ? <><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></>
+                  : <><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"/><line x1="1" y1="1" x2="23" y2="23"/></>
+                }
+              </svg>
+              <span className="text-sm font-semibold hidden sm:inline" style={{ color: showHelpers ? '#60a5fa' : '#555' }}>
+                {showHelpers ? 'Aide ON' : 'Aide OFF'}
+              </span>
+            </button>
             <button onClick={restart} className="p-2 rounded-lg bg-white/10 hover:bg-white/20 transition-colors">
               <RotateCcw className="w-5 h-5 text-white"/>
             </button>
@@ -846,7 +862,7 @@ export default function TrueCountTraining() {
 
           {/* Sabot */}
           <div style={{ display: 'flex', justifyContent: 'center' }}>
-            <CardShoe cardsRemaining={cardsRemaining}/>
+            <CardShoe cardsRemaining={cardsRemaining} showHelpers={showHelpers}/>
           </div>
 
           {/* Input / Result / Progress au centre */}
@@ -859,7 +875,7 @@ export default function TrueCountTraining() {
 
           {/* Bac de défausse */}
           <div style={{ display: 'flex', justifyContent: 'center' }}>
-            <DiscardTray cardsInTray={scenario.cardsInTray}/>
+            <DiscardTray cardsInTray={scenario.cardsInTray} showHelpers={showHelpers}/>
           </div>
         </div>
       </main>
