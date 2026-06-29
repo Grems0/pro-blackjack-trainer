@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
+import LangPicker from '../components/ui/LangPicker';
 
 // ── Entrance Scene — video background + two hotspots ────────────────────────
 function EntranceScene({ onChoose }) {
@@ -553,18 +554,25 @@ function RevelationScreen() {
 // ── Main ────────────────────────────────────────────────────────────────────
 export default function CasinoLanding() {
   const navigate = useNavigate();
-  const [screen, setScreen] = useState('entrance'); // entrance | table | bathroom | man | revelation
+  const [screen, setScreen] = useState('entrance');
 
   function handleChoose(choice) {
     if (choice === 'table') setScreen('table');
     else setScreen('bathroom');
   }
 
-  if (screen === 'entrance')  return <EntranceScene onChoose={handleChoose} />;
-  if (screen === 'table')     return <TableScene onDone={() => navigate('/training')} />;
-  if (screen === 'bathroom')  return <BathroomScreen onNext={() => setScreen('man')} />;
-  if (screen === 'man')       return <ManSpeaksScreen onNext={() => setScreen('revelation')} />;
-  if (screen === 'revelation') return <RevelationScreen />;
+  return (
+    <>
+      {/* Sélecteur de langue — fixe en haut à droite sur toutes les scènes */}
+      <div style={{ position: 'fixed', top: 18, right: 20, zIndex: 9999 }}>
+        <LangPicker dark />
+      </div>
 
-  return null;
+      {screen === 'entrance'   && <EntranceScene onChoose={handleChoose} />}
+      {screen === 'table'      && <TableScene onDone={() => navigate('/training')} />}
+      {screen === 'bathroom'   && <BathroomScreen onNext={() => setScreen('man')} />}
+      {screen === 'man'        && <ManSpeaksScreen onNext={() => setScreen('revelation')} />}
+      {screen === 'revelation' && <RevelationScreen />}
+    </>
+  );
 }
