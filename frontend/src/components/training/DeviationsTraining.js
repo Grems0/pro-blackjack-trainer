@@ -386,25 +386,25 @@ export default function DeviationsTraining() {
         {/* Carte principale */}
         <div className="bg-gradient-to-b from-green-800/50 to-green-900/50 rounded-2xl p-8 border border-amber-700/30">
 
-          <div className="text-center mb-6">
-            <p className="text-gray-400 text-xs uppercase tracking-widest mb-4">Situation</p>
-            <div className="flex items-center justify-center gap-6">
-              <div className="text-center">
-                <p className="text-gray-400 text-xs mb-2">Votre main</p>
-                <div className="flex gap-2 justify-center">
-                  {playerCards.map((card, idx) => (
-                    <PlayingCard key={idx} card={card} size="lg" />
-                  ))}
-                </div>
-                <p className="text-white font-bold mt-2">{scenario?.playerHand}</p>
-              </div>
-              <div className="text-gray-500 text-2xl font-light">vs</div>
-              <div className="text-center">
-                <p className="text-gray-400 text-xs mb-2">Croupier</p>
-                {dealerCardObj && <PlayingCard card={dealerCardObj} size="lg" />}
-                <p className="text-white font-bold mt-2">{scenario?.dealerCard}</p>
-              </div>
+          {/* Croupier */}
+          <div className="text-center mb-8">
+            <span className="text-gray-400 text-xs uppercase tracking-widest">Carte du Croupier</span>
+            <div className="flex justify-center mt-3">
+              {dealerCardObj && <PlayingCard card={dealerCardObj} size="lg" />}
             </div>
+          </div>
+
+          <div className="border-t border-amber-700/30 my-6" />
+
+          {/* Joueur */}
+          <div className="text-center mb-8">
+            <span className="text-gray-400 text-xs uppercase tracking-widest">Votre Main</span>
+            <div className="flex justify-center gap-3 mt-3">
+              {playerCards.map((card, idx) => (
+                <PlayingCard key={idx} card={card} size="lg" />
+              ))}
+            </div>
+            <p className="text-white font-bold mt-3">{scenario?.playerHand}</p>
           </div>
 
           <div className="border-t border-amber-700/20 my-5" />
