@@ -3,6 +3,7 @@ import "./App.css";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { GameProvider } from "./contexts/GameContext";
 import { AuthProvider } from "./contexts/AuthContext";
+import { LanguageProvider } from "./contexts/LanguageContext";
 import HomePage from "./pages/HomePage";
 import CasinoLanding from "./pages/CasinoLanding";
 import ChartsPage from "./pages/ChartsPage";
@@ -20,6 +21,7 @@ import ProRoute from "./components/routing/ProRoute";
 
 function App() {
   return (
+    <LanguageProvider>
     <AuthProvider>
       <GameProvider>
         <div className="App">
@@ -47,6 +49,7 @@ function App() {
         </div>
       </GameProvider>
     </AuthProvider>
+    </LanguageProvider>
   );
 }
 

@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { useGame } from '../contexts/GameContext';
 import { useAuth } from '../contexts/AuthContext';
+import { useLang } from '../contexts/LanguageContext';
 import Header from '../components/layout/Header';
 import PlayerSettings from '../components/settings/PlayerSettings';
 import BetSpread from '../components/settings/BetSpread';
@@ -19,6 +20,7 @@ export default function HomePage() {
   const navigate = useNavigate();
   const { user } = useAuth();
   const { resetToDefaults } = useGame();
+  const { t } = useLang();
   const [showVarianceVisualizer, setShowVarianceVisualizer] = useState(false);
   
   return (
@@ -41,10 +43,8 @@ export default function HomePage() {
               <span className="text-emerald-400 font-black text-xs">ENHC</span>
             </div>
             <div>
-              <p className="text-emerald-300 font-semibold text-sm">European No Hole Card</p>
-              <p className="text-gray-500 text-xs mt-0.5">
-                Le croupier ne vérifie pas son BJ · Vous perdez les doubles/splits si BJ croupier
-              </p>
+              <p className="text-emerald-300 font-semibold text-sm">{t('enhc_title')}</p>
+              <p className="text-gray-500 text-xs mt-0.5">{t('enhc_desc')}</p>
             </div>
           </div>
 
@@ -79,12 +79,12 @@ export default function HomePage() {
                       <Lock size={18} color="#c9a84c" />
                     </div>
                     <div style={{ textAlign: 'center' }}>
-                      <p style={{ color: '#fff', fontSize: 13, fontWeight: 800, margin: '0 0 4px' }}>Abonnement Pro requis</p>
+                      <p style={{ color: '#fff', fontSize: 13, fontWeight: 800, margin: '0 0 4px' }}>{t('pro_required')}</p>
                       <p style={{ color: '#888', fontSize: 11, margin: '0 0 10px', lineHeight: 1.6, maxWidth: 260 }}>
                         En fonction de tes paramètres du dessus, analyse ta rentabilité : gain attendu par heure, risque de ruine, précision de tes décisions et de tes mises. Pour savoir si ta stratégie est vraiment gagnante.
                       </p>
                       <span style={{ display: 'inline-block', padding: '7px 16px', borderRadius: 8, background: 'linear-gradient(135deg, #c9a84c, #a8823a)', color: '#000', fontSize: 12, fontWeight: 800 }}>
-                        Voir les offres →
+                        {t('pro_see_offers')}
                       </span>
                     </div>
                   </div>
@@ -97,7 +97,7 @@ export default function HomePage() {
                   onClick={() => setShowVarianceVisualizer(true)}
                   className="w-full py-3 bg-emerald-500 hover:bg-emerald-600 text-white font-semibold rounded-lg transition-colors"
                 >
-                  Visualiseur de variance
+                  {t('btn_variance')}
                 </button>
                 
                 <button
@@ -108,7 +108,7 @@ export default function HomePage() {
                     <path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8" />
                     <path d="M3 3v5h5" />
                   </svg>
-                  Réinitialiser les paramètres par défaut
+                  {t('btn_reset')}
                 </button>
               </div>
             </div>
@@ -120,14 +120,14 @@ export default function HomePage() {
           {/* Parcours recommandé */}
           <div className="mb-8" style={{ position: 'relative' }}>
             <div style={{ filter: isPro ? 'none' : 'blur(4px)', pointerEvents: isPro ? 'auto' : 'none', userSelect: isPro ? 'auto' : 'none' }}>
-              <p className="text-xs font-bold uppercase tracking-widest text-gray-600 mb-4">Parcours recommandé</p>
+              <p className="text-xs font-bold uppercase tracking-widest text-gray-600 mb-4">{t('section_recommended')}</p>
               <div className="flex items-stretch gap-0 overflow-x-auto pb-1">
                 {[
-                  { step: 1, name: 'Running Count',    sub: 'Compter carte par carte',             color: '#4ade80', bg: 'rgba(74,222,128,0.08)',  border: 'rgba(74,222,128,0.2)',  pro: false },
-                  { step: 2, name: 'True Count',       sub: 'Convertir RC en TC',                  color: '#60a5fa', bg: 'rgba(96,165,250,0.08)',  border: 'rgba(96,165,250,0.2)',  pro: true  },
-                  { step: 3, name: 'Stratégie de base',sub: 'Maîtriser chaque décision',           color: '#fcd34d', bg: 'rgba(252,211,77,0.08)',  border: 'rgba(252,211,77,0.2)',  pro: false },
-                  { step: 4, name: 'Déviations',       sub: 'Ajuster selon le TC',                 color: '#c084fc', bg: 'rgba(192,132,252,0.08)', border: 'rgba(192,132,252,0.2)', pro: true  },
-                  { step: 5, name: 'Simulation Casino',sub: 'Tout combiner en conditions réelles', color: '#f87171', bg: 'rgba(248,113,113,0.08)',  border: 'rgba(248,113,113,0.2)', pro: true  },
+                  { step: 1, nameKey: 'mod_rc_name',  subKey: 'mod_rc_sub',  color: '#4ade80', bg: 'rgba(74,222,128,0.08)',  border: 'rgba(74,222,128,0.2)',  pro: false },
+                  { step: 2, nameKey: 'mod_tc_name',  subKey: 'mod_tc_sub',  color: '#60a5fa', bg: 'rgba(96,165,250,0.08)',  border: 'rgba(96,165,250,0.2)',  pro: true  },
+                  { step: 3, nameKey: 'mod_bs_name',  subKey: 'mod_bs_sub',  color: '#fcd34d', bg: 'rgba(252,211,77,0.08)',  border: 'rgba(252,211,77,0.2)',  pro: false },
+                  { step: 4, nameKey: 'mod_dev_name', subKey: 'mod_dev_sub', color: '#c084fc', bg: 'rgba(192,132,252,0.08)', border: 'rgba(192,132,252,0.2)', pro: true  },
+                  { step: 5, nameKey: 'mod_sim_name', subKey: 'mod_sim_sub', color: '#f87171', bg: 'rgba(248,113,113,0.08)',  border: 'rgba(248,113,113,0.2)', pro: true  },
                 ].map((s, i, arr) => (
                   <div key={s.name} style={{ display: 'flex', alignItems: 'stretch', flex: i === arr.length - 1 ? '1.4' : '1', minWidth: 120 }}>
                     <div style={{
@@ -138,10 +138,10 @@ export default function HomePage() {
                     }}>
                       <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 4 }}>
                         <span style={{ width: 18, height: 18, borderRadius: '50%', background: s.color, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 10, fontWeight: 900, color: '#000', flexShrink: 0 }}>{s.step}</span>
-                        <span style={{ color: s.color, fontSize: 12, fontWeight: 700, whiteSpace: 'nowrap' }}>{s.name}</span>
+                        <span style={{ color: s.color, fontSize: 12, fontWeight: 700, whiteSpace: 'nowrap' }}>{t(s.nameKey)}</span>
                         {s.pro && <Lock size={10} color="#c9a84c" style={{ flexShrink: 0 }} />}
                       </div>
-                      <p style={{ color: '#444', fontSize: 11, margin: 0, lineHeight: 1.4 }}>{s.sub}</p>
+                      <p style={{ color: '#444', fontSize: 11, margin: 0, lineHeight: 1.4 }}>{t(s.subKey)}</p>
                     </div>
                     {i < arr.length - 1 && (
                       <div style={{ width: 24, flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#0e0e0e', borderTop: '1px solid #1a1a1a', borderBottom: '1px solid #1a1a1a' }}>
@@ -158,8 +158,8 @@ export default function HomePage() {
               <div onClick={() => navigate('/pricing')} style={{ position: 'absolute', inset: 0, zIndex: 10, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 10, cursor: 'pointer', borderRadius: 12 }}>
                 <div style={{ background: 'rgba(10,10,10,0.7)', backdropFilter: 'blur(2px)', borderRadius: 10, padding: '10px 18px', display: 'flex', alignItems: 'center', gap: 10, border: '1px solid rgba(201,168,76,0.25)' }}>
                   <Lock size={14} color="#c9a84c" />
-                  <span style={{ color: '#c9a84c', fontSize: 12, fontWeight: 800 }}>Parcours guidé — Pro uniquement</span>
-                  <span style={{ color: '#888', fontSize: 11 }}>Voir les offres →</span>
+                  <span style={{ color: '#c9a84c', fontSize: 12, fontWeight: 800 }}>{t('section_recommended')} — Pro</span>
+                  <span style={{ color: '#888', fontSize: 11 }}>{t('pro_see_offers')}</span>
                 </div>
               </div>
             )}
@@ -167,7 +167,7 @@ export default function HomePage() {
 
           {/* Training Modules Section */}
           <section>
-            <h2 className="text-xl font-bold text-white mb-6">Modules d'entraînement</h2>
+            <h2 className="text-xl font-bold text-white mb-6">{t('section_settings')}</h2>
             <TrainingModules />
           </section>
         </main>
