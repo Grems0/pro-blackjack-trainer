@@ -1,21 +1,16 @@
 import React, { useState, useEffect, useRef } from 'react';
+import { useLang } from '../../contexts/LanguageContext';
 import { Link } from 'react-router-dom';
 import { ArrowLeft, ChevronDown, ChevronRight } from 'lucide-react';
 
 // ─── Données ──────────────────────────────────────────────────────────────────
-const SECTIONS = [
-  { id: 'bases',       label: 'Les bases du jeu' },
-  { id: 'enhc',        label: 'La règle ENHC' },
-  { id: 's17h17',      label: 'S17 vs H17' },
-  { id: 'strategie',   label: 'Stratégie de base' },
-  { id: 'hilo',        label: 'Comptage Hi-Lo' },
-  { id: 'deviations',  label: 'Déviations' },
-  { id: 'betspread',   label: 'Grille de mises' },
-  { id: 'bankroll',    label: 'Gestion de bankroll' },
-  { id: 'modules',     label: 'Les modules' },
-  { id: 'parametres',  label: 'Paramètres du site' },
-  { id: 'glossaire',   label: 'Glossaire complet' },
-];
+const SECTION_IDS = ['bases','enhc','s17h17','strategie','hilo','deviations','betspread','bankroll','modules','parametres','glossaire'];
+const SECTION_KEYS = {
+  bases: 'academy_sect_bases', enhc: 'academy_sect_enhc', s17h17: 'academy_sect_s17h17',
+  strategie: 'academy_sect_strategie', hilo: 'academy_sect_hilo', deviations: 'academy_sect_deviations',
+  betspread: 'academy_sect_betspread', bankroll: 'academy_sect_bankroll', modules: 'academy_sect_modules',
+  parametres: 'academy_sect_parametres', glossaire: 'academy_sect_glossaire',
+};
 
 // ─── Composants ───────────────────────────────────────────────────────────────
 function Tag({ children, color = 'gray' }) {
@@ -107,8 +102,10 @@ function Formula({ children }) {
 
 // ─── Contenu principal ────────────────────────────────────────────────────────
 export default function Academy() {
+  const { t } = useLang();
   const [activeSection, setActiveSection] = useState('bases');
   const contentRef = useRef(null);
+  const SECTIONS = SECTION_IDS.map(id => ({ id, label: t(SECTION_KEYS[id]) }));
 
   useEffect(() => {
     const handler = () => {
@@ -136,14 +133,14 @@ export default function Academy() {
         padding:'16px 24px', position:'sticky', top:0, zIndex:20 }}>
         <div style={{ maxWidth:1100, margin:'0 auto', display:'flex', alignItems:'center', justifyContent:'space-between' }}>
           <div style={{ display:'flex', alignItems:'center', gap:14 }}>
-            <Link to="/" style={{ display:'flex', alignItems:'center', justifyContent:'center',
+            <Link to="/training" style={{ display:'flex', alignItems:'center', justifyContent:'center',
               width:36, height:36, background:'rgba(255,255,255,0.05)', borderRadius:8,
               border:'1px solid #1e1e1e', textDecoration:'none' }}>
               <ArrowLeft size={16} color="#fff"/>
             </Link>
             <div>
-              <h1 style={{ color:'#fff', fontSize:17, fontWeight:800, margin:0 }}>Académie</h1>
-              <p style={{ color:'#444', fontSize:11, margin:0 }}>Guide complet — Blackjack & comptage de cartes</p>
+              <h1 style={{ color:'#fff', fontSize:17, fontWeight:800, margin:0 }}>{t('academy_title')}</h1>
+              <p style={{ color:'#444', fontSize:11, margin:0 }}>{t('academy_subtitle')}</p>
             </div>
           </div>
         </div>
@@ -153,7 +150,7 @@ export default function Academy() {
 
         {/* Sidebar navigation */}
         <aside style={{ width:200, flexShrink:0, position:'sticky', top:88, alignSelf:'flex-start', height:'fit-content' }}>
-          <p style={{ color:'#333', fontSize:10, fontWeight:700, textTransform:'uppercase', letterSpacing:2, margin:'0 0 12px' }}>Sommaire</p>
+          <p style={{ color:'#333', fontSize:10, fontWeight:700, textTransform:'uppercase', letterSpacing:2, margin:'0 0 12px' }}>{t('academy_toc')}</p>
           {SECTIONS.map(s => (
             <button key={s.id} onClick={() => scrollTo(s.id)}
               style={{

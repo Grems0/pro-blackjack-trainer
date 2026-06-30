@@ -6,6 +6,7 @@ import { useGame } from '../../contexts/GameContext';
 import { generateDeck, shuffleDeck, getHiLoValue } from '../../data/mockData';
 import StrategyCharts from '../charts/StrategyCharts';
 import { useProAccess } from '../../hooks/useProAccess';
+import { useLang } from '../../contexts/LanguageContext';
 
 // ── Carte individuelle ───────────────────────────────────────────────────────
 function Card({ card, faceDown = false, animating = false, small = false }) {
@@ -90,6 +91,7 @@ function PlayerSpot({ cards, animatingIdx, label, isYou }) {
 
 // ── Modal saisie du RC ───────────────────────────────────────────────────────
 function CountInputModal({ onSubmit }) {
+  const { t } = useLang();
   const [value, setValue] = useState('');
   const ref = useRef(null);
   useEffect(() => { ref.current?.focus(); }, []);
@@ -100,7 +102,7 @@ function CountInputModal({ onSubmit }) {
     <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.7)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 50, backdropFilter: 'blur(4px)' }}>
       <div style={{ background: '#111', border: '1px solid #222', borderRadius: 20, padding: '32px 28px', maxWidth: 340, width: '90%', textAlign: 'center' }}>
         <p style={{ color: 'rgba(255,255,255,0.5)', fontSize: 11, letterSpacing: '0.25em', textTransform: 'uppercase', margin: '0 0 12px' }}>Running Count</p>
-        <h2 style={{ color: '#fff', fontSize: 20, fontWeight: 800, margin: '0 0 24px' }}>Quel est le RC ?</h2>
+        <h2 style={{ color: '#fff', fontSize: 20, fontWeight: 800, margin: '0 0 24px' }}>{t('rc_what_is_rc')}</h2>
         <input
           ref={ref}
           type="number"
@@ -120,7 +122,7 @@ function CountInputModal({ onSubmit }) {
           background: 'linear-gradient(135deg,#4ade80,#16a34a)',
           border: 'none', color: '#000', fontWeight: 800, fontSize: 15, cursor: 'pointer',
         }}>
-          Valider →
+          {t('rc_validate')}
         </button>
       </div>
     </div>
@@ -129,6 +131,7 @@ function CountInputModal({ onSubmit }) {
 
 // ── Modal feedback ───────────────────────────────────────────────────────────
 function FeedbackModal({ correct, userAnswer, correctAnswer, onDismiss }) {
+  const { t } = useLang();
   return (
     <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.65)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 50 }}>
       <div style={{ background: '#111', border: `1px solid ${correct ? 'rgba(74,222,128,0.3)' : 'rgba(248,113,113,0.3)'}`, borderRadius: 20, padding: '32px 28px', maxWidth: 320, width: '90%', textAlign: 'center' }}>
@@ -146,7 +149,7 @@ function FeedbackModal({ correct, userAnswer, correctAnswer, onDismiss }) {
         </h2>
         {!correct && (
           <p style={{ color: 'rgba(255,255,255,0.5)', fontSize: 14, margin: '0 0 4px' }}>
-            Votre réponse : <span style={{ color: '#f87171', fontWeight: 700 }}>{userAnswer > 0 ? `+${userAnswer}` : userAnswer}</span>
+            {t('rc_your_answer')} <span style={{ color: '#f87171', fontWeight: 700 }}>{userAnswer > 0 ? `+${userAnswer}` : userAnswer}</span>
           </p>
         )}
         <p style={{ color: 'rgba(255,255,255,0.7)', fontSize: 16, margin: '0 0 24px' }}>
@@ -157,7 +160,7 @@ function FeedbackModal({ correct, userAnswer, correctAnswer, onDismiss }) {
           background: 'rgba(255,255,255,0.08)', border: '1px solid rgba(255,255,255,0.12)',
           color: '#fff', fontWeight: 700, fontSize: 14, cursor: 'pointer',
         }}>
-          Continuer →
+          {t('rc_continue')}
         </button>
       </div>
     </div>
@@ -168,6 +171,7 @@ function FeedbackModal({ correct, userAnswer, correctAnswer, onDismiss }) {
 export default function RunningCountTraining() {
   const navigate = useNavigate();
   const isPro = useProAccess();
+  const { t } = useLang();
   const { tableRules, currentModule } = useGame();
   const [showChart, setShowChart] = useState(false);
   const [showProMsg, setShowProMsg] = useState(false);
@@ -407,11 +411,11 @@ export default function RunningCountTraining() {
         <div onClick={() => setShowProMsg(false)} style={{ position: 'fixed', inset: 0, zIndex: 200, display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'rgba(0,0,0,0.75)' }}>
           <div onClick={e => e.stopPropagation()} style={{ background: '#111', border: '1px solid #2a2a2a', borderRadius: 16, padding: '28px 24px', maxWidth: 360, width: '90%', textAlign: 'center' }}>
             <Lock size={24} color="#c9a84c" style={{ marginBottom: 12 }}/>
-            <h3 style={{ color: '#fff', fontSize: 16, fontWeight: 800, margin: '0 0 8px' }}>Tableaux réservés aux abonnés</h3>
-            <p style={{ color: '#666', fontSize: 13, lineHeight: 1.6, margin: '0 0 20px' }}>Accédez aux tableaux de stratégie avec un abonnement Pro.</p>
+            <h3 style={{ color: '#fff', fontSize: 16, fontWeight: 800, margin: '0 0 8px' }}>{t('rc_pro_charts_title')}</h3>
+            <p style={{ color: '#666', fontSize: 13, lineHeight: 1.6, margin: '0 0 20px' }}>{t('rc_pro_charts_desc')}</p>
             <div style={{ display: 'flex', gap: 10 }}>
-              <button onClick={() => setShowProMsg(false)} style={{ flex: 1, padding: '10px', borderRadius: 10, background: 'transparent', border: '1px solid #2a2a2a', color: '#888', fontWeight: 700, fontSize: 13, cursor: 'pointer' }}>Fermer</button>
-              <button onClick={() => navigate('/pricing')} style={{ flex: 1, padding: '10px', borderRadius: 10, background: 'linear-gradient(135deg,#c9a84c,#a8823a)', border: 'none', color: '#000', fontWeight: 800, fontSize: 13, cursor: 'pointer' }}>Voir les offres →</button>
+              <button onClick={() => setShowProMsg(false)} style={{ flex: 1, padding: '10px', borderRadius: 10, background: 'transparent', border: '1px solid #2a2a2a', color: '#888', fontWeight: 700, fontSize: 13, cursor: 'pointer' }}>{t('rc_close')}</button>
+              <button onClick={() => navigate('/pricing')} style={{ flex: 1, padding: '10px', borderRadius: 10, background: 'linear-gradient(135deg,#c9a84c,#a8823a)', border: 'none', color: '#000', fontWeight: 800, fontSize: 13, cursor: 'pointer' }}>{t('rc_see_offers')}</button>
             </div>
           </div>
         </div>
@@ -438,7 +442,7 @@ export default function RunningCountTraining() {
             <div>
               <h1 style={{ color: '#fff', fontSize: 18, fontWeight: 800, margin: 0 }}>Running Count</h1>
               <p style={{ color: 'rgba(255,255,255,0.3)', fontSize: 12, margin: 0 }}>
-                {gameActive ? `Round ${rounds + 1}` : 'Appuyez sur Distribuer'}
+                {gameActive ? `${t('rc_round')} ${rounds + 1}` : t('rc_press_deal')}
               </p>
             </div>
           </div>
@@ -457,12 +461,12 @@ export default function RunningCountTraining() {
             <button onClick={() => isPro ? setShowChart(true) : setShowProMsg(true)}
               style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '7px 14px', borderRadius: 10, background: 'rgba(201,168,76,0.12)', border: '1px solid rgba(201,168,76,0.3)', cursor: 'pointer' }}>
               {isPro ? <BookOpen size={15} color="#c9a84c"/> : <Lock size={15} color="#c9a84c"/>}
-              <span style={{ color: '#c9a84c', fontSize: 13, fontWeight: 600 }}>Tableaux</span>
+              <span style={{ color: '#c9a84c', fontSize: 13, fontWeight: 600 }}>{t('rc_charts')}</span>
             </button>
             <button onClick={() => { setGameActive(false); setShowResults(true); }}
               disabled={stats.total === 0}
               style={{ padding: '7px 14px', borderRadius: 10, background: 'rgba(248,113,113,0.12)', border: '1px solid rgba(248,113,113,0.3)', color: '#f87171', fontSize: 13, fontWeight: 600, cursor: 'pointer', opacity: stats.total === 0 ? 0.3 : 1 }}>
-              Terminer
+              {t('rc_end')}
             </button>
             <button onClick={reset} style={{ background: 'rgba(255,255,255,0.08)', border: 'none', borderRadius: 10, padding: 8, cursor: 'pointer' }}>
               <RotateCcw size={17} color="#fff"/>
@@ -476,7 +480,7 @@ export default function RunningCountTraining() {
 
         {/* Zone croupier */}
         <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', marginBottom: 48 }}>
-          <p style={{ color: 'rgba(255,255,255,0.25)', fontSize: 10, letterSpacing: '0.3em', textTransform: 'uppercase', margin: '0 0 16px' }}>Croupier</p>
+          <p style={{ color: 'rgba(255,255,255,0.25)', fontSize: 10, letterSpacing: '0.3em', textTransform: 'uppercase', margin: '0 0 16px' }}>{t('rc_dealer')}</p>
           <div style={{ display: 'flex', gap: 8 }}>
             {dealer.cards.length === 0 ? (
               <>
@@ -503,7 +507,7 @@ export default function RunningCountTraining() {
               key={spot.id}
               cards={spot.cards}
               animatingIdx={spot.animatingIdx}
-              label={i === 1 ? 'Vous' : `Joueur ${i === 0 ? 1 : 3}`}
+              label={i === 1 ? t('rc_you') : `${t('rc_player')} ${i === 0 ? 1 : 3}`}
               isYou={i === 1}
             />
           ))}
@@ -524,7 +528,7 @@ export default function RunningCountTraining() {
                 opacity: dealing ? 0.5 : 1,
               }}
             >
-              ♠ Distribuer
+              ♠ {t('rc_dealer')} →
             </button>
           ) : (
             <button
@@ -545,11 +549,11 @@ export default function RunningCountTraining() {
         {stats.total > 0 && (
           <div style={{ display: 'flex', justifyContent: 'center', gap: 24, marginTop: 28, flexWrap: 'wrap' }}>
             {[
-              { label: 'Rounds', value: rounds },
-              { label: 'Corrects', value: stats.correct, color: '#4ade80' },
-              { label: 'Erreurs', value: stats.incorrect, color: '#f87171' },
-              { label: 'Précision', value: `${accuracy}%`, color: accuracy >= 80 ? '#4ade80' : accuracy >= 60 ? '#fbbf24' : '#f87171' },
-            ].map(s => (
+              { label: t('rc_round'), value: rounds },
+              { label: t('rc_corrects'), value: stats.correct, color: '#4ade80' },
+              { label: t('rc_errors'), value: stats.incorrect, color: '#f87171' },
+              { label: t('rc_accuracy'), value: `${accuracy}%`, color: accuracy >= 80 ? '#4ade80' : accuracy >= 60 ? '#fbbf24' : '#f87171' },
+            ].filter(Boolean).map(s => (
               <div key={s.label} style={{ textAlign: 'center' }}>
                 <div style={{ color: s.color || 'rgba(255,255,255,0.7)', fontSize: 20, fontWeight: 800 }}>{s.value}</div>
                 <div style={{ color: 'rgba(255,255,255,0.3)', fontSize: 11, letterSpacing: '0.1em', textTransform: 'uppercase' }}>{s.label}</div>

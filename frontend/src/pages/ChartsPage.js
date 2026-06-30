@@ -1,15 +1,8 @@
 import React, { useState } from 'react';
+import { useLang } from '../contexts/LanguageContext';
 import { Link } from 'react-router-dom';
 import { ArrowLeft, BookOpen, HelpCircle } from 'lucide-react';
 import { HardChart, SoftChart, PairsChart, DeviationsChart } from '../components/charts/StrategyCharts';
-
-// ─── Onglets principaux ────────────────────────────────────────────────────────
-const CHART_TABS = [
-  { id: 'hard',  label: 'Mains dures' },
-  { id: 'soft',  label: 'Mains souples' },
-  { id: 'pairs', label: 'Paires' },
-  { id: 'devs',  label: 'Déviations' },
-];
 
 // ─── Helpers UI ────────────────────────────────────────────────────────────────
 function InfoBox({ color = 'amber', title, children }) {
@@ -46,6 +39,7 @@ function Divider() { return <div style={{ height: 1, background: '#1e1e1e', marg
 
 // ─── Légende compacte inline ───────────────────────────────────────────────────
 function CompactLegend({ isS17 }) {
+  const { t } = useLang();
   return (
     <div style={{
       display: 'flex', flexWrap: 'wrap', gap: '5px 12px',
@@ -53,13 +47,13 @@ function CompactLegend({ isS17 }) {
       background: '#0e0e0e', border: '1px solid #1a1a1a', borderRadius: 8,
     }}>
       {[
-        { code: 'H',  c: '#93c5fd', bg: '#1e3a5f', b: '#2a5a9f', lbl: 'Tirer' },
-        { code: 'S',  c: '#86efac', bg: '#14401e', b: '#1a6b2a', lbl: 'Rester' },
-        { code: 'D',  c: '#fcd34d', bg: '#4a2d00', b: '#7a4d00', lbl: 'Doubler' },
-        { code: 'Ds', c: '#fb923c', bg: '#5a3300', b: '#9a5500', lbl: 'Dbl/Rester' },
-        { code: 'P',  c: '#c4b5fd', bg: '#2d1f4a', b: '#5a3a9a', lbl: 'Séparer' },
-        { code: 'R',  c: '#fca5a5', bg: '#4a0f0f', b: '#8a1f1f', lbl: 'Abandonner' },
-        { code: 'Rh', c: '#fca5a5', bg: '#3d1010', b: '#7a1818', lbl: 'Aband/Tirer' },
+        { code: 'H',  c: '#93c5fd', bg: '#1e3a5f', b: '#2a5a9f', lbl: t('charts_legend_hit') },
+        { code: 'S',  c: '#86efac', bg: '#14401e', b: '#1a6b2a', lbl: t('charts_legend_stand') },
+        { code: 'D',  c: '#fcd34d', bg: '#4a2d00', b: '#7a4d00', lbl: t('charts_legend_double') },
+        { code: 'Ds', c: '#fb923c', bg: '#5a3300', b: '#9a5500', lbl: t('charts_legend_dbl_stand') },
+        { code: 'P',  c: '#c4b5fd', bg: '#2d1f4a', b: '#5a3a9a', lbl: t('charts_legend_split') },
+        { code: 'R',  c: '#fca5a5', bg: '#4a0f0f', b: '#8a1f1f', lbl: t('charts_legend_surr') },
+        { code: 'Rh', c: '#fca5a5', bg: '#3d1010', b: '#7a1818', lbl: t('charts_legend_surr_hit') },
       ].map(({ code, c, bg, b, lbl }) => (
         <div key={code} style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
           <div style={{ width: 28, height: 20, background: bg, border: `1px solid ${b}`, borderRadius: 3, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
@@ -70,12 +64,12 @@ function CompactLegend({ isS17 }) {
       ))}
       <div style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
         <div style={{ width: 28, height: 20, background: '#1e3a5f', border: '2px solid #ef4444', borderRadius: 3 }}/>
-        <span style={{ color: '#555', fontSize: 10 }}>Diff. ENHC</span>
+        <span style={{ color: '#555', fontSize: 10 }}>{t('charts_legend_enhc')}</span>
       </div>
       {!isS17 && (
         <div style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
           <div style={{ width: 28, height: 20, background: '#1e3a5f', border: '2px solid #f97316', borderRadius: 3 }}/>
-          <span style={{ color: '#555', fontSize: 10 }}>Diff. S17</span>
+          <span style={{ color: '#555', fontSize: 10 }}>{t('charts_legend_s17')}</span>
         </div>
       )}
     </div>
@@ -146,23 +140,30 @@ function HiLoTable() {
 // ONGLET TABLEAUX
 // ══════════════════════════════════════════════════════════════════════════════
 function TablesView({ variant }) {
+  const { t } = useLang();
   const [chartTab, setChartTab] = useState('hard');
   const isS17 = variant === 'S17';
+  const CHART_TABS = [
+    { id: 'hard',  label: t('charts_hard') },
+    { id: 'soft',  label: t('charts_soft') },
+    { id: 'pairs', label: t('charts_pairs') },
+    { id: 'devs',  label: t('charts_dev') },
+  ];
 
   return (
     <div className="max-w-4xl mx-auto px-4 py-6">
       {/* Sous-onglets type de main */}
       <div style={{ display: 'flex', gap: 4, background: '#111', borderRadius: 10, padding: 4, border: '1px solid #1e1e1e', marginBottom: 16 }}>
-        {CHART_TABS.map(t => (
-          <button key={t.id} onClick={() => setChartTab(t.id)}
+        {CHART_TABS.map(tab => (
+          <button key={tab.id} onClick={() => setChartTab(tab.id)}
             style={{
               flex: 1, padding: '7px 0', fontSize: 12, fontWeight: 700,
               border: 'none', cursor: 'pointer', borderRadius: 7,
-              background: chartTab === t.id ? '#1e1e1e' : 'transparent',
-              color: chartTab === t.id ? '#e0e0e0' : '#444',
+              background: chartTab === tab.id ? '#1e1e1e' : 'transparent',
+              color: chartTab === tab.id ? '#e0e0e0' : '#444',
               transition: 'all .15s',
             }}>
-            {t.label}
+            {tab.label}
           </button>
         ))}
       </div>
@@ -179,10 +180,10 @@ function TablesView({ variant }) {
 
       {/* Note contextuelle */}
       <div style={{ marginTop: 10, padding: '10px 14px', background: '#0e0e0e', border: '1px solid #1a1a1a', borderRadius: 8 }}>
-        {chartTab === 'hard'  && <p style={{ color: '#555', fontSize: 11, margin: 0 }}>Mains dures · Aucun As (ou As valant 1). Les cases encadrées en rouge diffèrent du blackjack américain (règle ENHC).</p>}
-        {chartTab === 'soft'  && <p style={{ color: '#555', fontSize: 11, margin: 0 }}>Mains souples · As compté pour 11 sans risque de buste. {!isS17 && 'En H17 : A,6 vs 2 → Doubler (croupier tire aussi sur soft 17).'}</p>}
-        {chartTab === 'pairs' && <p style={{ color: '#555', fontSize: 11, margin: 0 }}>Paires · Toujours séparer A,A et 8,8. Jamais séparer 10,10 (= 20) ni 5,5 (doubler à la place).</p>}
-        {chartTab === 'devs'  && <p style={{ color: '#555', fontSize: 11, margin: 0 }}>Déviations Hi-Lo · S'écarter de la stratégie de base quand le TC franchit le seuil. Illustrious 18 + Fab 4 Surrender.</p>}
+        {chartTab === 'hard'  && <p style={{ color: '#555', fontSize: 11, margin: 0 }}>{t('charts_note_hard')}</p>}
+        {chartTab === 'soft'  && <p style={{ color: '#555', fontSize: 11, margin: 0 }}>{isS17 ? t('charts_note_soft') : t('charts_note_soft_h17')}</p>}
+        {chartTab === 'pairs' && <p style={{ color: '#555', fontSize: 11, margin: 0 }}>{t('charts_note_pairs')}</p>}
+        {chartTab === 'devs'  && <p style={{ color: '#555', fontSize: 11, margin: 0 }}>{t('charts_note_devs')}</p>}
       </div>
     </div>
   );
@@ -323,6 +324,7 @@ function GuideView({ variant }) {
 // PAGE PRINCIPALE
 // ══════════════════════════════════════════════════════════════════════════════
 export default function ChartsPage() {
+  const { t } = useLang();
   const [mainTab, setMainTab] = useState('tables');
   const [variant, setVariant] = useState('S17');
 
@@ -333,11 +335,11 @@ export default function ChartsPage() {
         <div className="max-w-4xl mx-auto flex items-center justify-between gap-3 flex-wrap">
           {/* Retour + titre */}
           <div className="flex items-center gap-3">
-            <Link to="/" className="p-2 rounded-lg bg-white/5 hover:bg-white/10 transition-colors">
+            <Link to="/training" className="p-2 rounded-lg bg-white/5 hover:bg-white/10 transition-colors">
               <ArrowLeft className="w-5 h-5 text-white" />
             </Link>
             <div>
-              <h1 className="text-lg font-bold text-white leading-none">Tableaux de référence</h1>
+<h1 className="text-lg font-bold text-white leading-none">{t('charts_title')}</h1>
               <p className="text-gray-600 text-xs mt-0.5">ENHC · 6 jeux · Hi-Lo</p>
             </div>
           </div>
@@ -345,19 +347,19 @@ export default function ChartsPage() {
           {/* Onglets principaux */}
           <div style={{ display: 'flex', background: '#0a0a0a', borderRadius: 9, padding: 3, border: '1px solid #1e1e1e', gap: 2 }}>
             {[
-              { id: 'tables', label: 'Tableaux',  icon: <BookOpen className="w-3.5 h-3.5" /> },
-              { id: 'guide',  label: 'Guide',     icon: <HelpCircle className="w-3.5 h-3.5" /> },
-            ].map(t => (
-              <button key={t.id} onClick={() => setMainTab(t.id)}
+              { id: 'tables', label: t('charts_tab_charts'),  icon: <BookOpen className="w-3.5 h-3.5" /> },
+              { id: 'guide',  label: t('charts_tab_guide'),     icon: <HelpCircle className="w-3.5 h-3.5" /> },
+            ].map(tab => (
+              <button key={tab.id} onClick={() => setMainTab(tab.id)}
                 style={{
                   display: 'flex', alignItems: 'center', gap: 5,
                   padding: '6px 16px', fontSize: 12, fontWeight: 700,
                   border: 'none', cursor: 'pointer', borderRadius: 7,
-                  background: mainTab === t.id ? '#1e1e1e' : 'transparent',
-                  color: mainTab === t.id ? '#e0e0e0' : '#444',
+                  background: mainTab === tab.id ? '#1e1e1e' : 'transparent',
+                  color: mainTab === tab.id ? '#e0e0e0' : '#444',
                   transition: 'all .15s',
                 }}>
-                {t.icon} {t.label}
+                {tab.icon} {tab.label}
               </button>
             ))}
           </div>

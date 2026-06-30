@@ -157,7 +157,7 @@ function FreeCard() {
           Commence par les bases. Accès permanent aux modules Running Count et Stratégie de base.
         </p>
 
-        <Link to="/" style={{ display: 'block', textDecoration: 'none' }}>
+        <Link to="/training" style={{ display: "block", textDecoration: "none" }}>
           <div style={{
             width: '100%', padding: '13px', borderRadius: 12,
             background: 'transparent', border: '1px solid #2a2a2a',
@@ -305,7 +305,7 @@ export default function PricingPage() {
           Pas encore convaincu ? Commence gratuitement — pas de carte bancaire requise.
         </p>
         <div style={{ display: 'flex', gap: 12, justifyContent: 'center', flexWrap: 'wrap' }}>
-          <Link to="/" style={{ textDecoration: 'none', padding: '12px 28px', borderRadius: 12, border: '1px solid #222', color: '#888', fontWeight: 700, fontSize: 14 }}>
+          <Link to="/training" style={{ textDecoration: 'none', padding: '12px 28px', borderRadius: 12, border: '1px solid #222', color: '#888', fontWeight: 700, fontSize: 14 }}>
             Essayer gratuitement
           </Link>
           <button

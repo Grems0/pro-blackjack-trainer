@@ -3,6 +3,7 @@ import SessionResults from './SessionResults';
 import { useNavigate } from 'react-router-dom';
 import { ArrowLeft, RotateCcw, ChevronLeft, ChevronRight, BookOpen, X } from 'lucide-react';
 import { useGame } from '../../contexts/GameContext';
+import { useLang } from '../../contexts/LanguageContext';
 import StrategyCharts from '../charts/StrategyCharts';
 
 const TOTAL_CARDS = 312;
@@ -33,6 +34,7 @@ function realisticRC(cardsInTray) {
 
 // ─── Card Shoe (sabot) SVG — transparent acrylic, 3/4 perspective ──────────
 function CardShoe({ cardsRemaining, showHelpers }) {
+  const { t } = useLang();
   const fill = cardsRemaining / TOTAL_CARDS;
 
   const F = { tl: [30, 52], tr: [170, 52], br: [166, 310], bl: [34, 310] };
@@ -68,7 +70,7 @@ function CardShoe({ cardsRemaining, showHelpers }) {
   return (
     <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 10 }}>
       <p style={{ color: 'rgba(255,255,255,0.4)', fontSize: 11, letterSpacing: '0.12em', textTransform: 'uppercase', margin: 0 }}>
-        Sabot
+        {t('tc_shoe')}
       </p>
 
       <svg viewBox="0 0 220 365" width={185} height={310} xmlns="http://www.w3.org/2000/svg" style={{ overflow: 'visible', display: 'block' }}>
@@ -199,12 +201,12 @@ function CardShoe({ cardsRemaining, showHelpers }) {
       {showHelpers && (
         <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4 }}>
           <p style={{ color: 'rgba(255,255,255,0.25)', fontSize: 10, margin: 0, letterSpacing: '0.08em' }}>
-            {cardsRemaining} cartes restantes · {(cardsRemaining / 52).toFixed(1)} jeux
+            {cardsRemaining} {t('tc_cards_remaining')} · {(cardsRemaining / 52).toFixed(1)} {t('tc_decks')}
           </p>
           <div style={{ display: 'flex', alignItems: 'center', gap: 6, background: `${zoneColor}12`, border: `1px solid ${zoneColor}35`, borderRadius: 8, padding: '4px 10px' }}>
             <div style={{ width: 6, height: 6, borderRadius: '50%', background: zoneColor }}/>
             <span style={{ color: zoneColor, fontSize: 11, fontWeight: 700 }}>
-              ~{exactDecksRemaining.toFixed(1)} jeux dans le sabot
+              ~{exactDecksRemaining.toFixed(1)} {t('tc_decks_in_shoe')}
             </span>
           </div>
         </div>
@@ -215,6 +217,7 @@ function CardShoe({ cardsRemaining, showHelpers }) {
 
 // ─── Casino Discard Tray — photo-realistic ───────────────────────────────────
 function DiscardTray({ cardsInTray, showHelpers }) {
+  const { t } = useLang();
   const pts = (...coords) => coords.map(([x, y]) => `${x},${y}`).join(' ');
 
   // ── Geometry — tall tray, clear 3/4 perspective ──
@@ -268,7 +271,7 @@ function DiscardTray({ cardsInTray, showHelpers }) {
   return (
     <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 10 }}>
       <p style={{ color: 'rgba(255,255,255,0.4)', fontSize: 11, letterSpacing: '0.12em', textTransform: 'uppercase', margin: 0 }}>
-        Bac de défausse
+        {t('tc_discard')}
       </p>
 
       <svg viewBox={`0 0 ${W2} ${H2}`} width={210} height={360}
@@ -553,7 +556,7 @@ function DiscardTray({ cardsInTray, showHelpers }) {
       {showHelpers && (
         <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4 }}>
           <p style={{ color: 'rgba(255,255,255,0.25)', fontSize: 10, margin: 0, fontVariantNumeric: 'tabular-nums', letterSpacing: '0.08em' }}>
-            {cardsInTray} cartes · {(cardsInTray / 52).toFixed(1)} jeux défaussés
+            {cardsInTray} {t('tc_cards_in_discard')} · {(cardsInTray / 52).toFixed(1)} {t('tc_decks_discarded')}
           </p>
           <div style={{ width: 210, background: '#151515', borderRadius: 6, overflow: 'hidden', border: '1px solid #222' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', padding: '3px 7px 0' }}>
@@ -583,7 +586,7 @@ function DiscardTray({ cardsInTray, showHelpers }) {
           <div style={{ display: 'flex', alignItems: 'center', gap: 6, background: `${zoneColor}12`, border: `1px solid ${zoneColor}30`, borderRadius: 8, padding: '4px 12px' }}>
             <div style={{ width: 6, height: 6, borderRadius: '50%', background: zoneColor, boxShadow: `0 0 5px ${zoneColor}` }}/>
             <span style={{ color: zoneColor, fontSize: 11, fontWeight: 700 }}>
-              Zone {zoneLow}–{zoneHigh} jeux restants
+              {t('tc_zone')} {zoneLow}–{zoneHigh} {t('tc_decks_left')}
             </span>
           </div>
         </div>
@@ -594,9 +597,10 @@ function DiscardTray({ cardsInTray, showHelpers }) {
 
 // ─── TC Input ────────────────────────────────────────────────────────────────
 function TCInput({ value, onChange, onSubmit }) {
+  const { t } = useLang();
   return (
     <div className="bg-[#2a2a2d] rounded-xl p-6 space-y-5">
-      <p className="text-center text-gray-400 text-xs uppercase tracking-widest">Votre True Count</p>
+      <p className="text-center text-gray-400 text-xs uppercase tracking-widest">{t('tc_your_tc')}</p>
       <div className="flex items-center justify-center gap-4">
         <button onClick={() => onChange(value - 1)} className="w-11 h-11 rounded-full bg-[#1a1a1d] border border-gray-600 hover:border-gray-400 flex items-center justify-center transition-colors">
           <ChevronLeft className="w-5 h-5 text-white"/>
@@ -609,18 +613,19 @@ function TCInput({ value, onChange, onSubmit }) {
         </button>
       </div>
       <button onClick={onSubmit} className="w-full py-3 bg-emerald-500 hover:bg-emerald-600 text-white font-semibold rounded-lg transition-colors">
-        Valider
+        {t('tc_validate')}
       </button>
     </div>
   );
 }
 
 function ProgressPanel({ correct, total }) {
+  const { t } = useLang();
   const pct = total > 0 ? Math.round((correct / total) * 100) : 0;
   return (
     <div className="bg-[#2a2a2d] rounded-xl p-4">
       <div className="flex justify-between items-center">
-        <span className="text-gray-400 text-sm">{correct} / {total} correctes</span>
+<span className="text-gray-400 text-sm">{correct} / {total} {t('tc_correctes')}</span>
         <span className={`font-bold text-sm ${pct >= 70 ? 'text-emerald-400' : pct >= 50 ? 'text-amber-400' : 'text-red-400'}`}>{pct}%</span>
       </div>
     </div>
@@ -628,17 +633,18 @@ function ProgressPanel({ correct, total }) {
 }
 
 function WrongBreakdown({ scenario, onNext }) {
+  const { t } = useLang();
   const { rc, cardsInTray, exactDecksRemaining, estimatedDecks, exactTC, expectedTC, step } = scenario;
-  const divLabel = step === 1 ? 'jeu entier' : step === 0.5 ? 'demi-jeu' : 'quart de jeu';
+  const divLabel = step === 1 ? t('tc_whole_deck') : step === 0.5 ? t('tc_half_deck') : t('tc_quarter_deck');
   const rows = [
-    { l: 'Running Count (RC)',             v: fmtRC(rc) },
-    { l: 'Cartes dans la défausse',        v: `${cardsInTray}` },
-    { l: 'Jeux dans la défausse',          v: (cardsInTray/52).toFixed(2) },
-    { l: 'Cartes restantes',               v: `${TOTAL_CARDS - cardsInTray}` },
-    { l: 'Jeux restants (exact)',          v: exactDecksRemaining.toFixed(3), hi: true },
-    { l: `Jeux estimés (÷ ${divLabel})`,   v: fmtN(estimatedDecks), hi: true },
-    { l: 'TC exact (non arrondi)',         v: exactTC.toFixed(3) },
-    { l: 'TC attendu (tronqué vers zéro)', v: fmtRC(expectedTC), ans: true },
+    { l: t('tc_running_count'),             v: fmtRC(rc) },
+    { l: t('tc_cards_in_discard'),        v: `${cardsInTray}` },
+    { l: t('tc_decks_in_tray'),          v: (cardsInTray/52).toFixed(2) },
+    { l: t('tc_cards_left_detail'),               v: `${TOTAL_CARDS - cardsInTray}` },
+    { l: t('tc_exact_decks'),          v: exactDecksRemaining.toFixed(3), hi: true },
+    { l: `${t('tc_estimated_decks')} (÷ ${divLabel})`,   v: fmtN(estimatedDecks), hi: true },
+    { l: t('tc_exact_tc'),         v: exactTC.toFixed(3) },
+    { l: t('tc_expected_tc'), v: fmtRC(expectedTC), ans: true },
   ];
   return (
     <div className="bg-[#2a2a2d] rounded-xl overflow-hidden">
@@ -646,7 +652,7 @@ function WrongBreakdown({ scenario, onNext }) {
         <div className="w-6 h-6 rounded-full bg-orange-500 flex items-center justify-center flex-shrink-0">
           <span className="text-white font-bold text-sm leading-none">!</span>
         </div>
-        <p className="text-orange-300 font-semibold text-sm">Mauvaise réponse — Détail</p>
+<p className="text-orange-300 font-semibold text-sm">{t('tc_wrong_detail')}</p>
       </div>
       <div className="px-5 pt-3 pb-2">
         {rows.map(({ l, v, hi, ans }) => (
@@ -660,8 +666,8 @@ function WrongBreakdown({ scenario, onNext }) {
         <p className="text-gray-500 text-xs mb-3 text-center font-mono">
           {fmtRC(rc)} ÷ {fmtN(estimatedDecks)} = {exactTC.toFixed(3)} → <span className="text-emerald-400 font-bold">{fmtRC(expectedTC)}</span>
         </p>
-        <button onClick={onNext} className="w-full py-3 bg-emerald-500 hover:bg-emerald-600 text-white font-semibold rounded-lg transition-colors">
-          Suivant →
+<button onClick={onNext} className="w-full py-3 bg-emerald-500 hover:bg-emerald-600 text-white font-semibold rounded-lg transition-colors">
+          {t('tc_next')}
         </button>
       </div>
     </div>
@@ -676,7 +682,7 @@ function CorrectFlash() {
           <path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/>
         </svg>
       </div>
-      <p className="text-emerald-400 text-xl font-bold">CORRECT !</p>
+      <p className="text-emerald-400 text-xl font-bold">{t('tc_correct')}</p>
     </div>
   );
 }
@@ -684,6 +690,7 @@ function CorrectFlash() {
 // ─── Main ─────────────────────────────────────────────────────────────────────
 export default function TrueCountTraining() {
   const navigate = useNavigate();
+  const { t } = useLang();
   const { currentModule, additionalSettings } = useGame();
   const [showChart, setShowChart] = useState(false);
 
@@ -792,7 +799,7 @@ export default function TrueCountTraining() {
             </button>
             <div>
               <h1 className="text-xl font-bold text-white">True Count</h1>
-              <p className="text-sm" style={{ color: 'rgba(255,255,255,0.4)' }}>Estimation des jeux restants</p>
+              <p className="text-sm" style={{ color: 'rgba(255,255,255,0.4)' }}>{t('tc_estimation')}</p>
             </div>
           </div>
           <div className="flex items-center gap-3">
@@ -805,10 +812,10 @@ export default function TrueCountTraining() {
             </div>
             <button onClick={() => setShowChart(true)} className="flex items-center gap-2 px-3 py-2 rounded-lg bg-amber-500/20 hover:bg-amber-500/30 border border-amber-500/40 transition-colors">
               <BookOpen className="w-4 h-4 text-amber-400"/>
-              <span className="text-amber-300 text-sm font-semibold hidden sm:inline">Tableaux</span>
+<span className="text-amber-300 text-sm font-semibold hidden sm:inline">{t('rc_charts')}</span>
             </button>
             <button onClick={() => { setRunning(false); setShowResults(true); }} disabled={stats.total === 0} className="px-3 py-2 rounded-lg bg-red-500/20 hover:bg-red-500/30 border border-red-500/40 text-red-300 text-sm font-semibold transition-colors disabled:opacity-30 disabled:cursor-not-allowed">
-              Terminer
+              {t('tc_terminate')}
             </button>
             <button
               onClick={() => setShowHelpers(h => !h)}
@@ -817,7 +824,7 @@ export default function TrueCountTraining() {
                 background: showHelpers ? 'rgba(96,165,250,0.15)' : 'rgba(255,255,255,0.06)',
                 borderColor: showHelpers ? 'rgba(96,165,250,0.4)' : 'rgba(255,255,255,0.1)',
               }}
-              title={showHelpers ? 'Masquer les indicateurs' : 'Afficher les indicateurs'}
+              title={showHelpers ? t('tc_help_off') : t('tc_help_on')}
             >
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke={showHelpers ? '#60a5fa' : '#555'} strokeWidth="2" strokeLinecap="round">
                 {showHelpers
@@ -826,7 +833,7 @@ export default function TrueCountTraining() {
                 }
               </svg>
               <span className="text-sm font-semibold hidden sm:inline" style={{ color: showHelpers ? '#60a5fa' : '#555' }}>
-                {showHelpers ? 'Aide ON' : 'Aide OFF'}
+                {showHelpers ? t('tc_help_on') : t('tc_help_off')}
               </span>
             </button>
             <button onClick={restart} className="p-2 rounded-lg bg-white/10 hover:bg-white/20 transition-colors">

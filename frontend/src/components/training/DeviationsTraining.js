@@ -1,8 +1,9 @@
 import React, { useState, useCallback, useRef } from 'react';
 import SessionResults from './SessionResults';
 import { useNavigate } from 'react-router-dom';
-import { ArrowLeft, RotateCcw, BookOpen, X, RefreshCw } from 'lucide-react';
+import { ArrowLeft, RotateCcw, BookOpen, X, RefreshCw, Info } from 'lucide-react';
 import { useGame } from '../../contexts/GameContext';
+import { useLang } from '../../contexts/LanguageContext';
 import PlayingCard from '../game/PlayingCard';
 import StrategyCharts from '../charts/StrategyCharts';
 import {
@@ -38,8 +39,39 @@ const DEV_SIGN_H17 = {
 };
 
 const ACTION_KEY_TO_LABEL = {
-  H: 'Tirer', S: 'Rester', D: 'Doubler', P: 'Séparer', R: 'Abandonner',
+  H: 'Hit', S: 'Stand', D: 'Double', P: 'Split', R: 'Surrender',
 };
+
+// Extrait la stratégie de base depuis le texte "(au lieu de X)"
+function getDeviationExplanation(dev, isDownward) {
+  const action = dev.action || '';
+  const sign = isDownward ? '≤' : '≥';
+  const tc = dev.trueCount;
+  const tcStr = `TC ${sign} ${tc >= 0 ? '+' : ''}${tc}`;
+
+  // Cas spécial Assurance
+  if (dev.playerHand === 'Assurance') {
+    return {
+      basic: "Don't take insurance",
+      deviation: "Take insurance",
+      tcStr,
+    };
+  }
+
+  // Extrait "au lieu de X" pour trouver la stratégie de base
+  const match = action.match(/au lieu de ([^)—\n]+)/i);
+  const basicRaw = match ? match[1].trim() : null;
+
+  // Extrait l'action de déviation (tout avant la parenthèse)
+  const devMatch = action.match(/^([^(—\n]+)/);
+  const deviationAction = devMatch ? devMatch[1].trim() : action;
+
+  return {
+    basic: basicRaw || '—',
+    deviation: deviationAction,
+    tcStr,
+  };
+}
 
 function actionKeyFromText(actionText) {
   const t = actionText.toLowerCase();
@@ -64,6 +96,7 @@ const TC_VALUES = [-3, -2, -1, 0, 1, 2, 3, 4, 5, 6];
 
 export default function DeviationsTraining() {
   const navigate       = useNavigate();
+  const { t } = useLang();
   const { currentModule } = useGame();
 
   const savedConfig = (() => {
@@ -103,6 +136,7 @@ export default function DeviationsTraining() {
   // ─── Session state ────────────────────────────────────────────────────────
   const [scenario,       setScenario]       = useState(null);
   const [isSurrenderDev, setIsSurrenderDev] = useState(false);
+  const [showInfo,       setShowInfo]       = useState(false);
   const [selectedAction, setSelectedAction] = useState(null);
   const [selectedSign,   setSelectedSign]   = useState(null);
   const [selectedTC,     setSelectedTC]     = useState(null);
@@ -125,6 +159,7 @@ export default function DeviationsTraining() {
     setSelectedTC(null);
     setFeedback(null);
     setCurrentReviewKey(null);
+    setShowInfo(false);
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [ruleVariant, surrenderAllowed]);
 
@@ -148,6 +183,7 @@ export default function DeviationsTraining() {
     setSelectedTC(null);
     setFeedback(null);
     setCurrentReviewKey(picked.reviewKey);
+    setShowInfo(false);
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [reviewItems, generateScenario, ruleVariant, surrenderAllowed]);
 
@@ -218,11 +254,11 @@ export default function DeviationsTraining() {
   };
 
   const ACTIONS = [
-    { key: 'H', label: 'Tirer' },
-    { key: 'S', label: 'Rester' },
-    { key: 'D', label: 'Doubler' },
-    { key: 'P', label: 'Séparer' },
-    ...(surrenderAllowed ? [{ key: 'R', label: 'Abandonner' }] : []),
+    { key: 'H', label: 'Hit' },
+    { key: 'S', label: 'Stand' },
+    { key: 'D', label: 'Double' },
+    { key: 'P', label: 'Split' },
+    ...(surrenderAllowed ? [{ key: 'R', label: 'Surrender' }] : []),
   ];
 
   const playerCards   = scenario ? (HAND_CARDS[scenario.playerHand] || []) : [];
@@ -280,9 +316,9 @@ export default function DeviationsTraining() {
               <ArrowLeft className="w-5 h-5 text-white" />
             </button>
             <div>
-              <h1 className="text-xl font-bold text-white">Déviations</h1>
+              <h1 className="text-xl font-bold text-white">Deviations</h1>
               <p className="text-sm text-gray-500">
-                {reviewMode ? '— Mode Révision' : "Début de l'exercice"}
+                {reviewMode ? t('dev_revision_mode') : t('dev_session_start')}
               </p>
             </div>
           </div>
@@ -304,12 +340,12 @@ export default function DeviationsTraining() {
                 className="flex items-center gap-2 px-3 py-2 rounded-lg bg-amber-500/30 border border-amber-500/60 transition-colors"
               >
                 <RefreshCw className="w-4 h-4 text-amber-300" />
-                <span className="text-amber-300 text-sm font-bold">Révision {reviewCount > 0 ? `(${reviewCount})` : '✓'}</span>
+                <span className="text-amber-300 text-sm font-bold">{t('bs_review_mode')} {reviewCount > 0 ? `(${reviewCount})` : '✓'}</span>
               </button>
             )}
             <button onClick={() => setShowChart(true)} className="flex items-center gap-2 px-3 py-2 rounded-lg bg-amber-500/20 hover:bg-amber-500/30 border border-amber-500/40 transition-colors">
               <BookOpen className="w-4 h-4 text-amber-400" />
-              <span className="text-amber-300 text-sm font-semibold hidden sm:inline">Tableau</span>
+              <span className="text-amber-300 text-sm font-semibold hidden sm:inline">{t('dev_table_btn')}</span>
             </button>
             <span className="text-xs font-bold px-2 py-1 rounded bg-amber-500/20 text-amber-300 border border-amber-500/30">{ruleVariant}</span>
             <button
@@ -317,7 +353,7 @@ export default function DeviationsTraining() {
               disabled={stats.correct + stats.incorrect === 0}
               className="px-3 py-2 rounded-lg bg-red-500/20 hover:bg-red-500/30 border border-red-500/40 text-red-300 text-sm font-semibold transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
             >
-              Terminer
+              {t('dev_end')}
             </button>
             <button onClick={nextScenario} className="p-2 rounded-lg bg-white/10 hover:bg-white/20 transition-colors">
               <RotateCcw className="w-5 h-5 text-white" />
@@ -334,15 +370,15 @@ export default function DeviationsTraining() {
             <div className="flex items-center gap-2">
               <RefreshCw className="w-4 h-4 text-amber-400 flex-shrink-0" />
               <p className="text-amber-300 text-sm font-semibold">
-                Mode Révision —{' '}
+                {t('bs_review_mode')} —{' '}
                 {reviewCount > 0
-                  ? `${reviewCount} déviation${reviewCount > 1 ? 's' : ''} restante${reviewCount > 1 ? 's' : ''}`
-                  : 'File terminée ! Toutes les erreurs corrigées.'}
+                  ? `${reviewCount} ${t('dev_review_remaining')}`
+                  : t('dev_review_done')}
               </p>
             </div>
             {reviewCount === 0 && (
               <button onClick={() => { setReviewMode(false); generateScenario(); }} className="text-xs text-amber-400 underline">
-                Retour normal
+                {t('dev_back_normal')}
               </button>
             )}
           </div>
@@ -352,13 +388,13 @@ export default function DeviationsTraining() {
         {!reviewMode && reviewCount > 0 && (
           <div className="mb-4 px-4 py-3 rounded-xl bg-amber-900/20 border border-amber-500/30 flex items-center justify-between gap-3">
             <p className="text-amber-400/80 text-xs">
-              <span className="font-bold text-amber-300">{reviewCount}</span> déviation{reviewCount > 1 ? 's' : ''} à réviser depuis tes erreurs passées
+              <span className="font-bold text-amber-300">{reviewCount}</span> {t('dev_review_from_errors')}
             </p>
             <button
               onClick={() => { setReviewMode(true); generateReviewScenario(); }}
               className="text-xs text-amber-400 font-bold underline flex-shrink-0"
             >
-              Commencer la révision →
+              {t('dev_start_review')}
             </button>
           </div>
         )}
@@ -366,15 +402,15 @@ export default function DeviationsTraining() {
         {/* Stats */}
         <div className="bg-black/30 backdrop-blur-sm rounded-lg p-4 mb-6 flex items-center gap-8">
           <div className="text-center">
-            <span className="text-gray-400 text-sm">Correct</span>
+            <span className="text-gray-400 text-sm">{t('dev_correct')}</span>
             <p className="text-2xl font-bold text-emerald-400">{stats.correct}</p>
           </div>
           <div className="text-center">
-            <span className="text-gray-400 text-sm">Incorrect</span>
+            <span className="text-gray-400 text-sm">{t('dev_wrong')}</span>
             <p className="text-2xl font-bold text-red-400">{stats.incorrect}</p>
           </div>
           <div className="text-center">
-            <span className="text-gray-400 text-sm">Précision</span>
+            <span className="text-gray-400 text-sm">{t('rc_accuracy')}</span>
             <p className="text-2xl font-bold text-amber-400">
               {stats.correct + stats.incorrect > 0
                 ? Math.round((stats.correct / (stats.correct + stats.incorrect)) * 100)
@@ -388,7 +424,7 @@ export default function DeviationsTraining() {
 
           {/* Croupier */}
           <div className="text-center mb-8">
-            <span className="text-gray-400 text-xs uppercase tracking-widest">Carte du Croupier</span>
+            <span className="text-gray-400 text-xs uppercase tracking-widest">{t('dev_dealer_card')}</span>
             <div className="flex justify-center mt-3">
               {dealerCardObj && <PlayingCard card={dealerCardObj} size="lg" />}
             </div>
@@ -398,24 +434,76 @@ export default function DeviationsTraining() {
 
           {/* Joueur */}
           <div className="text-center mb-8">
-            <span className="text-gray-400 text-xs uppercase tracking-widest">Votre Main</span>
-            <div className="flex justify-center gap-3 mt-3">
+            <div className="flex items-center justify-center gap-2 mb-3">
+              <span className="text-gray-400 text-xs uppercase tracking-widest">{t('dev_your_hand')}</span>
+              {scenario && (
+                <button
+                  onClick={() => setShowInfo(v => !v)}
+                  title={t('dev_dev_explanation')}
+                  style={{
+                    width: 20, height: 20, borderRadius: '50%',
+                    background: showInfo ? 'rgba(201,168,76,0.3)' : 'rgba(255,255,255,0.1)',
+                    border: showInfo ? '1px solid #c9a84c' : '1px solid rgba(255,255,255,0.2)',
+                    display: 'flex', alignItems: 'center', justifyContent: 'center',
+                    cursor: 'pointer', flexShrink: 0,
+                  }}
+                >
+                  <Info size={11} color={showInfo ? '#c9a84c' : '#888'} />
+                </button>
+              )}
+            </div>
+            <div className="flex justify-center gap-3">
               {playerCards.map((card, idx) => (
                 <PlayingCard key={idx} card={card} size="lg" />
               ))}
             </div>
             <p className="text-white font-bold mt-3">{scenario?.playerHand}</p>
+
+            {/* Popup d'explication */}
+            {showInfo && scenario && (() => {
+              const isDownward = isSurrenderDev ? false : (devSignMap[scenario.index] ?? false);
+              const info = getDeviationExplanation(scenario, isDownward);
+              return (
+                <div style={{
+                  marginTop: 12,
+                  background: 'rgba(10,10,10,0.85)',
+                  border: '1px solid rgba(201,168,76,0.35)',
+                  borderRadius: 10,
+                  padding: '12px 16px',
+                  textAlign: 'left',
+                  backdropFilter: 'blur(8px)',
+                }}>
+                  <p style={{ color: '#888', fontSize: 10, textTransform: 'uppercase', letterSpacing: 1, marginBottom: 8 }}>
+                    {t('dev_dev_explanation')}
+                  </p>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+                    <div style={{ display: 'flex', alignItems: 'flex-start', gap: 8 }}>
+                      <span style={{ background: 'rgba(248,113,113,0.15)', border: '1px solid rgba(248,113,113,0.3)', color: '#f87171', borderRadius: 6, padding: '2px 8px', fontSize: 11, fontWeight: 700, flexShrink: 0, marginTop: 1 }}>
+                        {t('dev_basic_strategy')}
+                      </span>
+                      <span style={{ color: '#ccc', fontSize: 13 }}>{info.basic}</span>
+                    </div>
+                    <div style={{ display: 'flex', alignItems: 'flex-start', gap: 8 }}>
+                      <span style={{ background: 'rgba(74,222,128,0.15)', border: '1px solid rgba(74,222,128,0.3)', color: '#4ade80', borderRadius: 6, padding: '2px 8px', fontSize: 11, fontWeight: 700, flexShrink: 0, marginTop: 1 }}>
+                        {info.tcStr}
+                      </span>
+                      <span style={{ color: '#fff', fontSize: 13, fontWeight: 600 }}>{info.deviation}</span>
+                    </div>
+                  </div>
+                </div>
+              );
+            })()}
           </div>
 
           <div className="border-t border-amber-700/20 my-5" />
 
           <p className="text-center text-gray-300 text-sm mb-5 font-semibold uppercase tracking-wide">
-            Quelle est l'action optimale et à quel True Count ?
+            {t('dev_optimal_question')}
           </p>
 
           {/* Sélecteur Action */}
           <div className="mb-5">
-            <p className="text-gray-500 text-xs uppercase tracking-wide mb-2 text-center">Action optimale</p>
+<p className="text-gray-500 text-xs uppercase tracking-wide mb-2 text-center">{t('dev_optimal_action')}</p>
             <div className="flex flex-wrap justify-center gap-2">
               {ACTIONS.map(({ key, label }) => (
                 <button
@@ -438,11 +526,11 @@ export default function DeviationsTraining() {
 
           {/* Sélecteur Signe */}
           <div className="mb-4">
-            <p className="text-gray-500 text-xs uppercase tracking-wide mb-2 text-center">Signe du TC</p>
+<p className="text-gray-500 text-xs uppercase tracking-wide mb-2 text-center">{t('dev_tc_sign')}</p>
             <div className="flex justify-center gap-3">
               {[
-                { sign: '≥', label: 'À partir de',  hint: 'déviation si TC est supérieur ou égal' },
-                { sign: '≤', label: 'En dessous de', hint: 'déviation si TC est inférieur ou égal' },
+                { sign: '≥', label: t('dev_from'),  hint: '' },
+                { sign: '≤', label: t('dev_below'), hint: '' },
               ].map(({ sign, label, hint }) => (
                 <button
                   key={sign}
@@ -464,7 +552,7 @@ export default function DeviationsTraining() {
 
           {/* Sélecteur TC */}
           <div className="mb-6">
-            <p className="text-gray-500 text-xs uppercase tracking-wide mb-2 text-center">Valeur du TC</p>
+<p className="text-gray-500 text-xs uppercase tracking-wide mb-2 text-center">{t('dev_tc_value')}</p>
             <div className="flex flex-wrap justify-center gap-2">
               {TC_VALUES.map(val => (
                 <button
@@ -489,7 +577,7 @@ export default function DeviationsTraining() {
               disabled={!canValidate}
               className="w-full py-3 rounded-xl font-bold text-base transition-all disabled:opacity-30 disabled:cursor-not-allowed bg-emerald-600 hover:bg-emerald-500 text-white"
             >
-              Valider
+              {t('dev_validate')}
             </button>
           )}
 
@@ -501,22 +589,22 @@ export default function DeviationsTraining() {
                 : 'bg-red-500/10 border-red-500/30 p-5'
             }`}>
               {feedback.type === 'correct' ? (
-                <p className="text-emerald-400 font-bold text-lg">Correct !</p>
+                <p className="text-emerald-400 font-bold text-lg">{t('dev_correct')}</p>
               ) : (
                 <div className="space-y-3">
-                  <p className="text-red-400 font-bold text-center mb-3">Mauvaise réponse</p>
+<p className="text-red-400 font-bold text-center mb-3">{t('dev_wrong')}</p>
                   <div className="flex flex-col sm:flex-row gap-2">
                     <div className="flex items-center gap-2 flex-1 bg-red-500/10 border border-red-500/20 rounded-lg px-4 py-2">
                       <span className="text-red-400 text-lg">✗</span>
                       <div>
-                        <p className="text-xs text-gray-500 uppercase tracking-wide">Votre réponse</p>
+<p className="text-xs text-gray-500 uppercase tracking-wide">{t('dev_your_answer')}</p>
                         <p className="text-red-300 font-bold font-mono">{feedback.chosenAnswer}</p>
                       </div>
                     </div>
                     <div className="flex items-center gap-2 flex-1 bg-emerald-500/10 border border-emerald-500/20 rounded-lg px-4 py-2">
                       <span className="text-emerald-400 text-lg">✓</span>
                       <div>
-                        <p className="text-xs text-gray-500 uppercase tracking-wide">Bonne réponse</p>
+<p className="text-xs text-gray-500 uppercase tracking-wide">{t('dev_good_answer')}</p>
                         <p className="text-emerald-300 font-bold font-mono">{feedback.correctAnswer}</p>
                       </div>
                     </div>
@@ -529,7 +617,7 @@ export default function DeviationsTraining() {
           {feedback?.type === 'incorrect' && (
             <div className="mt-4 text-center">
               <button onClick={nextScenario} className="px-6 py-2 bg-gray-600 hover:bg-gray-500 text-white rounded-lg transition-colors">
-                Scénario suivant
+                {t('dev_next')}
               </button>
             </div>
           )}

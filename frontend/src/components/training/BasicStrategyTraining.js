@@ -2,6 +2,7 @@ import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { ArrowLeft, RotateCcw, BookOpen, X, RefreshCw, Lock } from 'lucide-react';
 import { useProAccess } from '../../hooks/useProAccess';
+import { useLang } from '../../contexts/LanguageContext';
 import SessionResults from './SessionResults';
 import { useGame } from '../../contexts/GameContext';
 import PlayingCard from '../game/PlayingCard';
@@ -19,12 +20,13 @@ import {
   isSoftHand
 } from '../../data/mockData';
 
-const ACTIONS = [
-  { key: 'H', label: 'Tirer',      color: 'bg-emerald-500 hover:bg-emerald-600' },
-  { key: 'S', label: 'Rester',     color: 'bg-red-500 hover:bg-red-600' },
-  { key: 'D', label: 'Doubler',    color: 'bg-blue-500 hover:bg-blue-600' },
-  { key: 'P', label: 'Séparer',    color: 'bg-purple-500 hover:bg-purple-600' },
-  { key: 'R', label: 'Abandonner', color: 'bg-amber-500 hover:bg-amber-600' }
+// ACTIONS uses static keys — labels are rendered via t() in the component
+const ACTION_KEYS = [
+  { key: 'H', tKey: 'bs_action_hit',       color: 'bg-emerald-500 hover:bg-emerald-600' },
+  { key: 'S', tKey: 'bs_action_stand',     color: 'bg-red-500 hover:bg-red-600' },
+  { key: 'D', tKey: 'bs_action_double',    color: 'bg-blue-500 hover:bg-blue-600' },
+  { key: 'P', tKey: 'bs_action_split',     color: 'bg-purple-500 hover:bg-purple-600' },
+  { key: 'R', tKey: 'bs_action_surrender', color: 'bg-amber-500 hover:bg-amber-600' }
 ];
 
 function weightedRandom(items) {
@@ -40,6 +42,7 @@ function weightedRandom(items) {
 export default function BasicStrategyTraining() {
   const navigate = useNavigate();
   const isPro = useProAccess();
+  const { t } = useLang();
   const [showProMsg, setShowProMsg] = useState(false);
   const { tableRules, currentModule } = useGame();
 
@@ -178,15 +181,15 @@ export default function BasicStrategyTraining() {
     let handDesc;
     if (currentIsPair) {
       const v = playerCards[0]?.value;
-      handDesc = `Paire de ${['10','J','Q','K'].includes(v) ? '10' : v}`;
+      handDesc = `Pair ${['10','J','Q','K'].includes(v) ? '10' : v}`;
     } else if (currentIsSoft) {
-      handDesc = `Main souple ${currentTotal} (As + ${currentTotal - 11})`;
+      handDesc = `Soft ${currentTotal} (A + ${currentTotal - 11})`;
     } else {
-      handDesc = `Total dur ${currentTotal}`;
+      handDesc = `Hard ${currentTotal}`;
     }
 
     if (isCorrect) {
-      setFeedback({ type: 'correct', message: 'Correct !' });
+      setFeedback({ type: 'correct' });
       setStats(prev => ({ ...prev, correct: prev.correct + 1 }));
 
       // Review mode: diminuer le poids de l'item
@@ -221,13 +224,13 @@ export default function BasicStrategyTraining() {
   };
 
   const getActionLabel = (action) => ({
-    'H':  'Tirer (Hit)',
-    'S':  'Rester (Stand)',
-    'D':  'Doubler (Double)',
-    'P':  'Séparer (Split)',
-    'Rh': 'Abandonner ou Tirer',
-    'Rs': 'Abandonner ou Rester',
-    'Ds': 'Doubler ou Rester'
+    'H':  'Hit',
+    'S':  'Stand',
+    'D':  'Double',
+    'P':  'Split',
+    'Rh': 'Surrender or Hit',
+    'Rs': 'Surrender or Stand',
+    'Ds': 'Double or Stand'
   }[action] || action);
 
   const playerTotal = calculateHandTotal(playerCards);
@@ -274,16 +277,16 @@ export default function BasicStrategyTraining() {
             <div style={{ width: 48, height: 48, borderRadius: '50%', background: 'rgba(201,168,76,0.15)', border: '1px solid rgba(201,168,76,0.4)', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 16px' }}>
               <Lock size={20} color="#c9a84c" />
             </div>
-            <h3 style={{ color: '#fff', fontSize: 16, fontWeight: 800, margin: '0 0 8px' }}>Tableau réservé aux abonnés</h3>
+            <h3 style={{ color: '#fff', fontSize: 16, fontWeight: 800, margin: '0 0 8px' }}>{t('bs_pro_table_title')}</h3>
             <p style={{ color: '#666', fontSize: 13, lineHeight: 1.6, margin: '0 0 20px' }}>
-              Les tableaux de stratégie S17/H17 sont accessibles avec un abonnement Pro.
+              {t('bs_pro_table_desc')}
             </p>
             <div style={{ display: 'flex', gap: 10 }}>
               <button onClick={() => setShowProMsg(false)} style={{ flex: 1, padding: '10px', borderRadius: 10, background: 'transparent', border: '1px solid #2a2a2a', color: '#888', fontWeight: 700, fontSize: 13, cursor: 'pointer' }}>
-                Fermer
+                {t('rc_close')}
               </button>
               <button onClick={() => navigate('/pricing')} style={{ flex: 1, padding: '10px', borderRadius: 10, background: 'linear-gradient(135deg, #c9a84c, #a8823a)', border: 'none', color: '#000', fontWeight: 800, fontSize: 13, cursor: 'pointer' }}>
-                Voir les offres →
+                {t('rc_see_offers')}
               </button>
             </div>
           </div>
@@ -309,9 +312,9 @@ export default function BasicStrategyTraining() {
               <ArrowLeft className="w-5 h-5 text-white" />
             </button>
             <div>
-              <h1 className="text-xl font-bold text-white">Stratégie de base</h1>
+              <h1 className="text-xl font-bold text-white">Basic Strategy</h1>
               <p className="text-sm text-gray-500">
-                {reviewMode ? '— Mode Révision' : "Début de l'exercice"}
+                {reviewMode ? t('bs_revision_mode') : t('bs_session_start')}
               </p>
             </div>
           </div>
@@ -334,12 +337,12 @@ export default function BasicStrategyTraining() {
                 className="flex items-center gap-2 px-3 py-2 rounded-lg bg-amber-500/30 border border-amber-500/60 transition-colors"
               >
                 <RefreshCw className="w-4 h-4 text-amber-300" />
-                <span className="text-amber-300 text-sm font-bold">Révision {reviewCount > 0 ? `(${reviewCount})` : '✓'}</span>
+                <span className="text-amber-300 text-sm font-bold">{t('bs_review_mode')} {reviewCount > 0 ? `(${reviewCount})` : '✓'}</span>
               </button>
             )}
             <button onClick={() => isPro ? setShowChart(true) : setShowProMsg(true)} className="flex items-center gap-2 px-3 py-2 rounded-lg bg-amber-500/20 hover:bg-amber-500/30 border border-amber-500/40 transition-colors">
               {isPro ? <BookOpen className="w-4 h-4 text-amber-400" /> : <Lock className="w-4 h-4 text-amber-400" />}
-              <span className="text-amber-300 text-sm font-semibold hidden sm:inline">Tableau</span>
+              <span className="text-amber-300 text-sm font-semibold hidden sm:inline">{t('bs_table_btn')}</span>
             </button>
 
             <span className="text-xs font-bold px-2 py-1 rounded bg-amber-500/20 text-amber-300 border border-amber-500/30">{ruleVariant}</span>
@@ -348,7 +351,7 @@ export default function BasicStrategyTraining() {
               disabled={stats.correct + stats.incorrect === 0}
               className="px-3 py-2 rounded-lg bg-red-500/20 hover:bg-red-500/30 border border-red-500/40 text-red-300 text-sm font-semibold transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
             >
-              Terminer
+              {t('bs_end')}
             </button>
             <button onClick={nextQuestion} className="p-2 rounded-lg bg-white/10 hover:bg-white/20 transition-colors">
               <RotateCcw className="w-5 h-5 text-white" />
@@ -365,15 +368,15 @@ export default function BasicStrategyTraining() {
             <div className="flex items-center gap-2">
               <RefreshCw className="w-4 h-4 text-amber-400 flex-shrink-0" />
               <p className="text-amber-300 text-sm font-semibold">
-                Mode Révision —{' '}
+                {t('bs_review_mode')} —{' '}
                 {reviewCount > 0
-                  ? `${reviewCount} situation${reviewCount > 1 ? 's' : ''} restante${reviewCount > 1 ? 's' : ''}`
-                  : 'File terminée ! Toutes les erreurs corrigées.'}
+                  ? `${reviewCount} ${t('bs_review_remaining')}`
+                  : t('bs_review_done')}
               </p>
             </div>
             {reviewCount === 0 && (
               <button onClick={() => { setReviewMode(false); generateHand(); }} className="text-xs text-amber-400 underline">
-                Retour normal
+                {t('bs_back_normal')}
               </button>
             )}
           </div>
@@ -383,13 +386,13 @@ export default function BasicStrategyTraining() {
         {!reviewMode && reviewCount > 0 && (
           <div className="mb-4 px-4 py-3 rounded-xl bg-amber-900/20 border border-amber-500/30 flex items-center justify-between gap-3">
             <p className="text-amber-400/80 text-xs">
-              <span className="font-bold text-amber-300">{reviewCount}</span> situation{reviewCount > 1 ? 's' : ''} à réviser depuis tes erreurs passées
+              <span className="font-bold text-amber-300">{reviewCount}</span> {t('bs_review_from_errors')}
             </p>
             <button
               onClick={() => { setReviewMode(true); generateReviewHand(); }}
               className="text-xs text-amber-400 font-bold underline flex-shrink-0"
             >
-              Commencer la révision →
+              {t('bs_start_review')}
             </button>
           </div>
         )}
@@ -398,15 +401,15 @@ export default function BasicStrategyTraining() {
         <div className="bg-black/30 backdrop-blur-sm rounded-lg p-4 mb-6 flex flex-wrap items-center justify-between gap-4">
           <div className="flex items-center gap-6">
             <div className="text-center">
-              <span className="text-gray-400 text-sm">Correct</span>
+              <span className="text-gray-400 text-sm">{t('bs_correct')}</span>
               <p className="text-2xl font-bold text-emerald-400">{stats.correct}</p>
             </div>
             <div className="text-center">
-              <span className="text-gray-400 text-sm">Incorrect</span>
+              <span className="text-gray-400 text-sm">{t('bs_wrong_decision')}</span>
               <p className="text-2xl font-bold text-red-400">{stats.incorrect}</p>
             </div>
             <div className="text-center">
-              <span className="text-gray-400 text-sm">Précision</span>
+              <span className="text-gray-400 text-sm">{t('rc_accuracy')}</span>
               <p className="text-2xl font-bold text-amber-400">
                 {stats.correct + stats.incorrect > 0
                   ? Math.round((stats.correct / (stats.correct + stats.incorrect)) * 100)
@@ -417,16 +420,16 @@ export default function BasicStrategyTraining() {
 
           {!reviewMode && (
             <div className="flex items-center gap-2">
-              <span className="text-gray-400 text-sm">Mode:</span>
+              <span className="text-gray-400 text-sm">{t('bs_mode')}</span>
               <select
                 value={mode}
                 onChange={(e) => setMode(e.target.value)}
                 className="bg-[#1a1a1d] border border-gray-700 rounded px-3 py-1.5 text-white text-sm"
               >
-                <option value="all">Toutes les mains</option>
-                <option value="hard">Mains dures</option>
-                <option value="soft">Mains souples</option>
-                <option value="pairs">Paires</option>
+                <option value="all">{t('modal_all_hands')}</option>
+                <option value="hard">{t('modal_hard_hands')}</option>
+                <option value="soft">{t('modal_soft_hands')}</option>
+                <option value="pairs">{t('modal_pairs')}</option>
               </select>
             </div>
           )}
@@ -435,7 +438,7 @@ export default function BasicStrategyTraining() {
         {/* Table de jeu */}
         <div className="bg-gradient-to-b from-green-800/50 to-green-900/50 rounded-2xl p-8 border border-amber-700/30">
           <div className="text-center mb-8">
-            <span className="text-gray-300 text-sm">Carte du Croupier</span>
+            <span className="text-gray-300 text-sm">{t('bs_dealer_card')}</span>
             <div className="flex justify-center mt-3">
               {dealerCard && <PlayingCard card={dealerCard} size="lg" />}
             </div>
@@ -444,16 +447,16 @@ export default function BasicStrategyTraining() {
           <div className="border-t border-amber-700/30 my-6" />
 
           <div className="text-center mb-8">
-            <span className="text-gray-300 text-sm">Votre Main</span>
+            <span className="text-gray-300 text-sm">{t('bs_your_hand')}</span>
             <div className="flex justify-center gap-3 mt-3">
               {playerCards.map((card, idx) => (
                 <PlayingCard key={idx} card={card} size="lg" />
               ))}
             </div>
             <div className="mt-4 flex items-center justify-center gap-4">
-              <span className="text-white text-xl font-bold">Total: {playerTotal}</span>
-              {isPair && <span className="text-purple-400 text-sm">(Paire)</span>}
-              {isSoft && !isPair && <span className="text-blue-400 text-sm">(Soft)</span>}
+              <span className="text-white text-xl font-bold">{t('bs_total')} {playerTotal}</span>
+              {isPair && <span className="text-purple-400 text-sm">{t('bs_pair')}</span>}
+              {isSoft && !isPair && <span className="text-blue-400 text-sm">{t('bs_soft')}</span>}
             </div>
           </div>
 
@@ -465,22 +468,22 @@ export default function BasicStrategyTraining() {
                 : 'bg-red-500/10 border-red-500/30 p-5'
             }`}>
               {feedback.type === 'correct' ? (
-                <p className="text-emerald-400 font-bold text-lg">Correct !</p>
+                <p className="text-emerald-400 font-bold text-lg">{t('bs_correct')}</p>
               ) : (
                 <div className="space-y-3">
-                  <p className="text-red-400 font-bold text-center mb-3">Mauvaise décision</p>
+                  <p className="text-red-400 font-bold text-center mb-3">{t('bs_wrong_decision')}</p>
                   <div className="flex flex-col sm:flex-row gap-2">
                     <div className="flex items-center gap-2 flex-1 bg-red-500/10 border border-red-500/20 rounded-lg px-4 py-2">
                       <span className="text-red-400 text-lg">✗</span>
                       <div>
-                        <p className="text-xs text-gray-500 uppercase tracking-wide">Votre choix</p>
+                        <p className="text-xs text-gray-500 uppercase tracking-wide">{t('bs_your_choice')}</p>
                         <p className="text-red-300 font-bold">{getActionLabel(feedback.chosenAction)}</p>
                       </div>
                     </div>
                     <div className="flex items-center gap-2 flex-1 bg-emerald-500/10 border border-emerald-500/20 rounded-lg px-4 py-2">
                       <span className="text-emerald-400 text-lg">✓</span>
                       <div>
-                        <p className="text-xs text-gray-500 uppercase tracking-wide">Bonne décision</p>
+                        <p className="text-xs text-gray-500 uppercase tracking-wide">{t('bs_good_decision')}</p>
                         <p className="text-emerald-300 font-bold">{getActionLabel(feedback.correctAction)}</p>
                       </div>
                     </div>
@@ -492,14 +495,14 @@ export default function BasicStrategyTraining() {
 
           {/* Boutons d'action */}
           <div className="flex flex-wrap justify-center gap-3">
-            {ACTIONS.filter(a => a.key !== 'R' || surrenderAllowed).map(action => (
+            {ACTION_KEYS.filter(a => a.key !== 'R' || surrenderAllowed).map(action => (
               <button
                 key={action.key}
                 onClick={() => handleAction(action.key)}
                 disabled={feedback?.type === 'correct'}
                 className={`px-6 py-3 ${action.color} text-white font-semibold rounded-lg transition-all disabled:opacity-50 hover:scale-105`}
               >
-                {action.label}
+                {t(action.tKey).split(' = ')[1] || t(action.tKey)}
               </button>
             ))}
           </div>
@@ -507,7 +510,7 @@ export default function BasicStrategyTraining() {
           {feedback?.type === 'incorrect' && (
             <div className="mt-4 text-center">
               <button onClick={nextQuestion} className="px-6 py-2 bg-gray-600 hover:bg-gray-500 text-white rounded-lg transition-colors">
-                Main suivante
+                {t('bs_next_hand')}
               </button>
             </div>
           )}
@@ -515,13 +518,13 @@ export default function BasicStrategyTraining() {
 
         {/* Référence rapide */}
         <div className="mt-6 bg-black/30 backdrop-blur-sm rounded-lg p-4">
-          <h3 className="text-sm text-gray-400 mb-3">Référence rapide</h3>
+          <h3 className="text-sm text-gray-400 mb-3">{t('bs_quick_ref')}</h3>
           <div className="flex flex-wrap gap-3 text-sm">
-            <span className="px-2 py-1 bg-emerald-500/20 text-emerald-400 rounded">H = Tirer</span>
-            <span className="px-2 py-1 bg-red-500/20 text-red-400 rounded">S = Rester</span>
-            <span className="px-2 py-1 bg-blue-500/20 text-blue-400 rounded">D = Doubler</span>
-            <span className="px-2 py-1 bg-purple-500/20 text-purple-400 rounded">P = Séparer</span>
-            <span className="px-2 py-1 bg-amber-500/20 text-amber-400 rounded">R = Abandonner</span>
+            <span className="px-2 py-1 bg-emerald-500/20 text-emerald-400 rounded">{t('bs_action_hit')}</span>
+            <span className="px-2 py-1 bg-red-500/20 text-red-400 rounded">{t('bs_action_stand')}</span>
+            <span className="px-2 py-1 bg-blue-500/20 text-blue-400 rounded">{t('bs_action_double')}</span>
+            <span className="px-2 py-1 bg-purple-500/20 text-purple-400 rounded">{t('bs_action_split')}</span>
+            <span className="px-2 py-1 bg-amber-500/20 text-amber-400 rounded">{t('bs_action_surrender')}</span>
           </div>
         </div>
       </main>

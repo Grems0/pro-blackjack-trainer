@@ -21,7 +21,7 @@ export default function PaymentCancelPage() {
           <Link to="/pricing" style={{ textDecoration: 'none', padding: '13px 28px', borderRadius: 12, background: 'linear-gradient(135deg, #c9a84c, #a8823a)', color: '#000', fontWeight: 800, fontSize: 14 }}>
             Voir les tarifs
           </Link>
-          <Link to="/" style={{ textDecoration: 'none', padding: '13px 28px', borderRadius: 12, background: 'transparent', border: '1px solid #222', color: '#888', fontWeight: 700, fontSize: 14 }}>
+          <Link to="/training" style={{ textDecoration: 'none', padding: '13px 28px', borderRadius: 12, background: 'transparent', border: '1px solid #222', color: '#888', fontWeight: 700, fontSize: 14 }}>
             Retour à l'accueil
           </Link>
         </div>

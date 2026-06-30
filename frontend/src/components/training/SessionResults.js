@@ -1,4 +1,5 @@
 import React from 'react';
+import { useLang } from '../../contexts/LanguageContext';
 
 function formatTime(seconds) {
   const m = Math.floor(seconds / 60);
@@ -9,8 +10,9 @@ function formatTime(seconds) {
 }
 
 function ScoreLine({ pct }) {
+  const { t } = useLang();
   const color = pct >= 90 ? '#4ade80' : pct >= 75 ? '#c9a84c' : pct >= 50 ? '#f97316' : '#f87171';
-  const label = pct >= 90 ? 'Excellent' : pct >= 75 ? 'Bien' : pct >= 50 ? 'À améliorer' : 'À reprendre';
+  const label = pct >= 90 ? t('sr_perf_good') : pct >= 75 ? t('sr_perf_ok') : pct >= 50 ? t('sr_perf_improve') : t('sr_perf_redo');
   return (
     <div style={{ textAlign: 'center', padding: '32px 0 24px' }}>
       <div style={{ fontSize: 80, fontWeight: 900, color, lineHeight: 1, letterSpacing: -2 }}>
@@ -67,6 +69,7 @@ export default function SessionResults({
   onReview,
   onHome,
 }) {
+  const { t } = useLang();
   const total = stats.total ?? (stats.correct + (stats.incorrect || 0));
   const pct   = total > 0 ? Math.round((stats.correct / total) * 100) : 0;
 
@@ -87,7 +90,7 @@ export default function SessionResults({
             color: accentColor, fontSize: 11, fontWeight: 700, letterSpacing: 1.5,
             textTransform: 'uppercase',
           }}>
-            {moduleName} — Fin de session
+            {moduleName} — {t('sr_session_end')}
           </span>
         </div>
 
@@ -106,10 +109,10 @@ export default function SessionResults({
           {/* Vitesse */}
           {timeSeconds > 0 && total > 0 && (
             <div style={{ margin: '0 20px 20px', background: '#0a0a0a', border: '1px solid #1a1a1a', borderRadius: 8, padding: '10px 14px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-              <span style={{ color: '#444', fontSize: 12 }}>Vitesse</span>
+              <span style={{ color: '#444', fontSize: 12 }}>{t('sr_speed')}</span>
               <span style={{ color: '#888', fontSize: 13, fontWeight: 700 }}>
-                {(total / (timeSeconds / 60)).toFixed(0)} questions / min
-                <span style={{ color: '#333', fontWeight: 400 }}> · {(timeSeconds / total).toFixed(1)}s / question</span>
+                {(total / (timeSeconds / 60)).toFixed(0)} {t('sr_questions_per_min')}
+                <span style={{ color: '#333', fontWeight: 400 }}> · {(timeSeconds / total).toFixed(1)}{t('sr_per_question')}</span>
               </span>
             </div>
           )}
@@ -118,11 +121,11 @@ export default function SessionResults({
         {/* RC/TC — Écart moyen */}
         {avgDelta !== null && (
           <div style={{ marginTop: 12, background: '#111', border: '1px solid #1e1e1e', borderRadius: 14, padding: '16px 20px' }}>
-            <p style={{ color: '#444', fontSize: 10, fontWeight: 700, textTransform: 'uppercase', letterSpacing: 1, margin: '0 0 10px' }}>Analyse des erreurs</p>
+            <p style={{ color: '#444', fontSize: 10, fontWeight: 700, textTransform: 'uppercase', letterSpacing: 1, margin: '0 0 10px' }}>{t('sr_error_analysis')}</p>
             <div style={{ display: 'flex', gap: 12 }}>
               <div style={{ flex: 1, background: '#0a0a0a', border: '1px solid #1a1a1a', borderRadius: 8, padding: '12px', textAlign: 'center' }}>
                 <p style={{ color: '#f97316', fontSize: 22, fontWeight: 900, margin: 0 }}>{avgDelta}</p>
-                <p style={{ color: '#444', fontSize: 10, margin: '3px 0 0', textTransform: 'uppercase', letterSpacing: 1 }}>Écart moyen</p>
+                <p style={{ color: '#444', fontSize: 10, margin: '3px 0 0', textTransform: 'uppercase', letterSpacing: 1 }}>{t('sr_avg_gap')}</p>
               </div>
               <div style={{ flex: 1, background: '#0a0a0a', border: '1px solid #1a1a1a', borderRadius: 8, padding: '12px', textAlign: 'center' }}>
                 <p style={{ color: '#888', fontSize: 22, fontWeight: 900, margin: 0 }}>
@@ -130,14 +133,14 @@ export default function SessionResults({
                     ? (rcMistakes.filter(m => Math.abs(m.userAnswer - m.correctAnswer) <= 1).length / rcMistakes.length * 100).toFixed(0)
                     : 0}%
                 </p>
-                <p style={{ color: '#444', fontSize: 10, margin: '3px 0 0', textTransform: 'uppercase', letterSpacing: 1 }}>Erreurs ≤ 1</p>
+                <p style={{ color: '#444', fontSize: 10, margin: '3px 0 0', textTransform: 'uppercase', letterSpacing: 1 }}>{t('sr_errors_le1')}</p>
               </div>
               {rcMistakes.some(m => m.userAnswer > m.correctAnswer) && (
                 <div style={{ flex: 1, background: '#0a0a0a', border: '1px solid #1a1a1a', borderRadius: 8, padding: '12px', textAlign: 'center' }}>
                   <p style={{ color: '#60a5fa', fontSize: 22, fontWeight: 900, margin: 0 }}>
                     +{(rcMistakes.filter(m => m.userAnswer > m.correctAnswer).length / rcMistakes.length * 100).toFixed(0)}%
                   </p>
-                  <p style={{ color: '#444', fontSize: 10, margin: '3px 0 0', textTransform: 'uppercase', letterSpacing: 1 }}>Surestimés</p>
+                  <p style={{ color: '#444', fontSize: 10, margin: '3px 0 0', textTransform: 'uppercase', letterSpacing: 1 }}>{t('sr_overestimated')}</p>
                 </div>
               )}
             </div>
@@ -157,7 +160,7 @@ export default function SessionResults({
         {topMistakes.length > 0 && (
           <div style={{ marginTop: 12, background: '#111', border: '1px solid #1e1e1e', borderRadius: 14, overflow: 'hidden' }}>
             <div style={{ padding: '14px 20px', borderBottom: '1px solid #1a1a1a', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-              <p style={{ color: '#e0e0e0', fontWeight: 800, fontSize: 14, margin: 0 }}>Erreurs les plus fréquentes</p>
+              <p style={{ color: '#e0e0e0', fontWeight: 800, fontSize: 14, margin: 0 }}>{t('sr_top_mistakes')}</p>
               <span style={{
                 padding: '2px 10px', borderRadius: 20, background: 'rgba(248,113,113,0.1)',
                 border: '1px solid rgba(248,113,113,0.25)', color: '#f87171', fontSize: 11, fontWeight: 700,
@@ -198,9 +201,9 @@ export default function SessionResults({
         {reviewCount > 0 && (
           <div style={{ marginTop: 12, background: 'rgba(201,168,76,0.06)', border: '1px solid rgba(201,168,76,0.2)', borderRadius: 14, padding: '14px 20px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12 }}>
             <div>
-              <p style={{ color: '#c9a84c', fontWeight: 700, fontSize: 13, margin: '0 0 2px' }}>File de révision</p>
+              <p style={{ color: '#c9a84c', fontWeight: 700, fontSize: 13, margin: '0 0 2px' }}>{t('sr_review_queue')}</p>
               <p style={{ color: '#555', fontSize: 11, margin: 0 }}>
-                {reviewCount} situation{reviewCount > 1 ? 's' : ''} enregistrée{reviewCount > 1 ? 's' : ''} — rejoue-les pour les effacer
+                {reviewCount} situation{reviewCount > 1 ? 's' : ''} — {t('sr_review_replay')}
               </p>
             </div>
             {onReview && (
@@ -208,7 +211,7 @@ export default function SessionResults({
                 onClick={onReview}
                 style={{ flexShrink: 0, padding: '8px 16px', background: '#c9a84c', border: 'none', borderRadius: 10, color: '#000', fontWeight: 800, fontSize: 12, cursor: 'pointer' }}
               >
-                Réviser →
+                {t('sr_review_btn')}
               </button>
             )}
           </div>

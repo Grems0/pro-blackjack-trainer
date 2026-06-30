@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { RotateCcw, ChevronDown, ChevronUp } from 'lucide-react';
 import { useGame } from '../../contexts/GameContext';
 import { defaultBetSpread } from '../../data/mockData';
+import InfoTooltip from '../ui/InfoTooltip';
 
 // Avantage joueur par TC (Hi-Lo, ENHC S17) — règle des ~0.5% par point de TC
 // Base house edge ENHC S17 6 jeux ≈ -0.5%
@@ -71,7 +72,10 @@ export default function BetSpread() {
       <div className="p-4">
         {/* Colonne headers */}
         <div className="grid grid-cols-[52px_1fr_80px_36px] gap-2 mb-2 text-xs text-gray-500 uppercase tracking-wide">
-          <span className="text-center">TC</span>
+          <span className="flex items-center justify-center gap-1">
+            TC
+            <InfoTooltip text="True Count (TC) : comptage courant divisé par le nombre de jeux restants. Le TC détermine votre avantage réel à chaque instant. TC ≥ +2 → avantage joueur, TC ≤ 0 → avantage casino. Adaptez votre mise en conséquence." />
+          </span>
           <span className="text-center">Mise (€)</span>
           <span className="text-center">Mains</span>
           <span></span>

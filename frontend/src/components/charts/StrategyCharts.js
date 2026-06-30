@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { useLang } from '../../contexts/LanguageContext';
 import {
   basicStrategyHardENHCS17,
   basicStrategyHardENHCH17,
@@ -53,6 +54,12 @@ function Cell({ action, isEnhcDiff = false, isH17Diff = false }) {
 }
 
 function Legend({ showH17Diff = false }) {
+  const { t } = useLang();
+  const LEGEND_LABELS = {
+    H: t('charts_legend_hit'), S: t('charts_legend_stand'), D: t('charts_legend_double'),
+    Ds: t('charts_legend_dbl_stand'), P: t('charts_legend_split'), R: t('charts_legend_surr'),
+    Rh: t('charts_legend_surr_hit'),
+  };
   const items = Object.entries(CELL_COLORS).filter(([k]) => !['Rs'].includes(k));
   return (
     <div style={{ marginTop: 12 }}>
@@ -60,19 +67,19 @@ function Legend({ showH17Diff = false }) {
         {items.map(([key, c]) => (
           <div key={key} style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
             <div style={{ width: 13, height: 13, background: c.bg, border: `1px solid ${c.border}`, borderRadius: 2 }} />
-            <span style={{ color: '#888', fontSize: 11 }}>{c.label}</span>
+            <span style={{ color: '#888', fontSize: 11 }}>{LEGEND_LABELS[key] || c.label}</span>
           </div>
         ))}
       </div>
       <div style={{ display: 'flex', flexWrap: 'wrap', gap: '4px 14px', marginTop: 6 }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
           <div style={{ width: 13, height: 13, background: '#1e3a5f', border: '2px solid #ef4444', borderRadius: 2 }} />
-          <span style={{ color: '#888', fontSize: 11 }}>Différent du standard américain (ENHC)</span>
+          <span style={{ color: '#888', fontSize: 11 }}>{t('sc_enhc_diff')}</span>
         </div>
         {showH17Diff && (
           <div style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
             <div style={{ width: 13, height: 13, background: '#1e3a5f', border: '2px solid #f97316', borderRadius: 2 }} />
-            <span style={{ color: '#888', fontSize: 11 }}>Différent de S17</span>
+            <span style={{ color: '#888', fontSize: 11 }}>{t('sc_s17_diff')}</span>
           </div>
         )}
       </div>
@@ -81,10 +88,11 @@ function Legend({ showH17Diff = false }) {
 }
 
 function ChartHeader() {
+  const { t } = useLang();
   return (
     <tr>
       <th style={{ width: 44, padding: '4px 2px', color: '#555', fontSize: 10, fontWeight: 600, textAlign: 'left' }}>
-        <span style={{ fontSize: 9, letterSpacing: 1, textTransform: 'uppercase' }}>→ Croupier</span>
+        <span style={{ fontSize: 9, letterSpacing: 1, textTransform: 'uppercase' }}>{t('sc_dealer_arrow')}</span>
       </th>
       {DK.map(d => (
         <th key={d} style={{ padding: '4px 2px', color: '#aaa', fontSize: 11, fontWeight: 600, textAlign: 'center', width: 38 }}>
@@ -262,9 +270,98 @@ const TH_STYLE = {
   borderBottom: '1px solid #2a2a2a',
 };
 
+function DevTooltip({ playerHand, dealerCard, bsAction, devAction, tc, direction }) {
+  const { t } = useLang();
+  const [show, setShow] = React.useState(false);
+  const isDown = direction === 'down';
+  const tcVal = `${tc >= 0 ? '+' : ''}${tc}`;
+  const signWord = isDown ? t('dev_lte') : t('dev_gte');
+
+  // Phrase naturelle
+  const sentence = `Par défaut avec ${playerHand} vs ${dealerCard}, la stratégie de base est de ${bsAction.toLowerCase()}. Mais quand le TC est ${signWord} ${tcVal}, la bonne décision est de ${devAction.toLowerCase()}.`;
+
+  return (
+    <span
+      style={{ position: 'relative', display: 'inline-flex', marginLeft: 6, verticalAlign: 'middle' }}
+      onMouseEnter={() => setShow(true)}
+      onMouseLeave={() => setShow(false)}
+    >
+      <span style={{
+        width: 14, height: 14, borderRadius: '50%',
+        background: 'rgba(255,255,255,0.06)',
+        border: '1px solid rgba(255,255,255,0.15)',
+        display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
+        cursor: 'default', fontSize: 9, color: '#777', fontWeight: 700, flexShrink: 0,
+      }}>ℹ</span>
+      {show && (
+        <div style={{
+          position: 'absolute', bottom: 20, right: 0, zIndex: 200,
+          background: '#1a1a1d', border: '1px solid rgba(201,168,76,0.35)',
+          borderRadius: 8, padding: '11px 14px', minWidth: 250, maxWidth: 300,
+          boxShadow: '0 8px 28px rgba(0,0,0,0.7)',
+        }}>
+          <p style={{ color: '#888', fontSize: 12, lineHeight: 1.6, margin: 0 }}>
+            Par défaut avec <span style={{ color: '#c9a84c', fontWeight: 700 }}>{playerHand} vs {dealerCard}</span>, la stratégie de base est de <span style={{ color: '#f87171', fontWeight: 600 }}>{bsAction.toLowerCase()}</span>. Mais quand le TC est {signWord} <span style={{ color: '#c9a84c', fontWeight: 700 }}>{tcVal}</span>, la bonne décision est de <span style={{ color: '#4ade80', fontWeight: 700 }}>{devAction.toLowerCase()}</span>.
+          </p>
+        </div>
+      )}
+    </span>
+  );
+}
+
+function SeuilTcHeader({ direction = 'up' }) {
+  const { t } = useLang();
+  const [show, setShow] = React.useState(false);
+  const isDown = direction === 'down';
+  const sign = isDown ? '≤' : '≥';
+  const bsAction = isDown ? t('charts_legend_stand') : t('dev_optimal_action');
+  const devAction = isDown ? t('charts_legend_hit') : t('sc_col_dev');
+  const color = isDown ? '#fca5a5' : '#86efac';
+
+  return (
+    <th style={TH_STYLE}>
+      <span style={{ display: 'flex', alignItems: 'center', gap: 4, position: 'relative' }}>
+        {t('sc_tc_threshold')}
+        <span
+          style={{ position: 'relative', display: 'inline-flex' }}
+          onMouseEnter={() => setShow(true)}
+          onMouseLeave={() => setShow(false)}
+        >
+          <span style={{
+            width: 14, height: 14, borderRadius: '50%',
+            background: 'rgba(255,255,255,0.07)',
+            border: '1px solid rgba(255,255,255,0.15)',
+            display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
+            cursor: 'default', fontSize: 9, color: '#888', fontWeight: 700,
+            flexShrink: 0,
+          }}>ℹ</span>
+          {show && (
+            <div style={{
+              position: 'absolute', top: 18, right: 0, zIndex: 100,
+              background: '#1a1a1d', border: '1px solid rgba(201,168,76,0.3)',
+              borderRadius: 8, padding: '10px 12px', minWidth: 220,
+              boxShadow: '0 8px 24px rgba(0,0,0,0.6)',
+              textTransform: 'none', letterSpacing: 0,
+            }}>
+              <p style={{ color: '#c9a84c', fontSize: 11, fontWeight: 700, marginBottom: 6 }}>{t('sc_tc_threshold')}</p>
+              <p style={{ color: '#aaa', fontSize: 11, lineHeight: 1.5, margin: 0 }}>
+                La stratégie de base est de <span style={{ color: '#fff', fontWeight: 600 }}>{bsAction}</span>.
+                <br />
+                Quand le TC {sign} ce seuil, la déviation correcte est de{' '}
+                <span style={{ color, fontWeight: 700 }}>{devAction}</span>.
+              </p>
+            </div>
+          )}
+        </span>
+      </span>
+    </th>
+  );
+}
+
 const TD_BASE = { padding: '8px 10px', borderBottom: '1px solid #1e1e1e', verticalAlign: 'middle' };
 
 export function DeviationsChart({ isS17 }) {
+  const { t } = useLang();
   const devs    = isS17 ? deviationsS17     : deviationsH17;
   const surDevs = isS17 ? surrenderDeviationsS17 : surrenderDeviationsH17;
 
@@ -293,7 +390,7 @@ export function DeviationsChart({ isS17 }) {
                 Assurance (Insurance)
               </p>
               <p style={{ color: '#888', fontSize: 12, margin: 0 }}>
-                Prendre l'assurance uniquement quand le croupier montre un As et que le TC est suffisamment élevé.
+{t('sc_ins_desc')}
               </p>
             </div>
             <SurrenderBadge tc={insurance.trueCount} />
@@ -303,15 +400,16 @@ export function DeviationsChart({ isS17 }) {
 
       {/* ── Déviations montantes ── */}
       <p style={{ fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: 2, color: '#555', marginBottom: 8 }}>
-        Déviations montantes — TC ≥ seuil → nouvelle action
+        {t('sc_devs_up')}
       </p>
       <div style={{ background: '#141414', borderRadius: 10, border: '1px solid #222', marginBottom: 20, overflow: 'hidden' }}>
         <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 12 }}>
           <thead>
             <tr>
-              {['#', 'Main joueur', 'Croupier', 'Stratégie de base', 'Action déviée', 'Seuil TC'].map(h => (
+              {['#', t('sc_col_player'), t('sc_col_dealer'), t('sc_col_bs'), t('sc_col_dev')].map(h => (
                 <th key={h} style={TH_STYLE}>{h}</th>
               ))}
+              <SeuilTcHeader direction="up" />
             </tr>
           </thead>
           <tbody>
@@ -342,15 +440,16 @@ export function DeviationsChart({ isS17 }) {
 
       {/* ── Déviations descendantes ── */}
       <p style={{ fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: 2, color: '#555', marginBottom: 8 }}>
-        Déviations descendantes — TC ≤ seuil → nouvelle action
+        {t('sc_devs_down')}
       </p>
       <div style={{ background: '#141414', borderRadius: 10, border: '1px solid #222', marginBottom: 20, overflow: 'hidden' }}>
         <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 12 }}>
           <thead>
             <tr>
-              {['#', 'Main joueur', 'Croupier', 'Stratégie de base', 'Action déviée', 'Seuil TC'].map(h => (
+              {['#', t('sc_col_player'), t('sc_col_dealer'), t('sc_col_bs'), t('sc_col_dev')].map(h => (
                 <th key={h} style={TH_STYLE}>{h}</th>
               ))}
+              <SeuilTcHeader direction="down" />
             </tr>
           </thead>
           <tbody>
@@ -370,15 +469,16 @@ export function DeviationsChart({ isS17 }) {
 
       {/* ── Surrender ── */}
       <p style={{ fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: 2, color: '#555', marginBottom: 8 }}>
-        Surrender par déviation (Fab 4) — TC ≥ seuil → Abandonner
+        {t('sc_devs_surrender')}
       </p>
       <div style={{ background: '#141414', borderRadius: 10, border: '1px solid #222', overflow: 'hidden' }}>
         <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 12 }}>
           <thead>
             <tr>
-              {['Main joueur', 'Croupier', 'Action de base', 'Action déviée', 'Seuil TC'].map(h => (
+              {[t('sc_col_player'), t('sc_col_dealer'), t('sc_col_bs'), t('sc_col_dev')].map(h => (
                 <th key={h} style={TH_STYLE}>{h}</th>
               ))}
+              <SeuilTcHeader direction="up" />
             </tr>
           </thead>
           <tbody>
@@ -407,10 +507,14 @@ export function DeviationsChart({ isS17 }) {
 }
 
 // ─── Export principal (legacy + nouvel usage) ─────────────────────────────────
-const BS_TABS = ['Mains dures', 'Mains souples', 'Paires'];
-
 export default function StrategyCharts({ defaultVariant, locked = false }) {
-  const [tab, setTab]     = useState('Mains dures');
+  const { t } = useLang();
+  const HARD_LABEL = t('charts_hard');
+  const SOFT_LABEL = t('charts_soft');
+  const PAIRS_LABEL = t('charts_pairs');
+  const DEV_LABEL = t('charts_dev');
+  const BS_TABS = [HARD_LABEL, SOFT_LABEL, PAIRS_LABEL];
+  const [tab, setTab]     = useState(HARD_LABEL);
   const [isS17, setIsS17] = useState(defaultVariant !== 'H17');
   const [showDevs, setShowDevs] = useState(false);
 
@@ -446,29 +550,29 @@ export default function StrategyCharts({ defaultVariant, locked = false }) {
 
       {/* Tabs stratégie / déviations */}
       <div style={{ display: 'flex', gap: 4, borderBottom: '1px solid #222', marginBottom: 16 }}>
-        {[...BS_TABS, 'Déviations'].map(t => (
-          <button key={t}
-            onClick={() => { setTab(t); if (t === 'Déviations') setShowDevs(true); else setShowDevs(false); }}
+        {[...BS_TABS, DEV_LABEL].map(tb => (
+          <button key={tb}
+            onClick={() => { setTab(tb); if (tb === DEV_LABEL) setShowDevs(true); else setShowDevs(false); }}
             style={{
               padding: '7px 14px', fontSize: 12, fontWeight: 700,
               border: 'none', cursor: 'pointer', borderRadius: '6px 6px 0 0',
-              background: tab === t ? '#1e1e1e' : 'transparent',
-              color: tab === t ? '#c9a84c' : '#555',
-              borderBottom: tab === t ? '2px solid #c9a84c' : '2px solid transparent',
+              background: tab === tb ? '#1e1e1e' : 'transparent',
+              color: tab === tb ? '#c9a84c' : '#555',
+              borderBottom: tab === tb ? '2px solid #c9a84c' : '2px solid transparent',
               transition: 'all .15s',
             }}>
-            {t}
+            {tb}
           </button>
         ))}
       </div>
 
       <div style={{ background: '#141414', borderRadius: 10, padding: 16, border: '1px solid #222' }}>
-        {tab === 'Mains dures'   && <HardChart  isS17={isS17} />}
-        {tab === 'Mains souples' && <SoftChart  isS17={isS17} />}
-        {tab === 'Paires'        && <PairsChart />}
-        {tab === 'Déviations'    && <DeviationsChart isS17={isS17} />}
+        {tab === HARD_LABEL   && <HardChart  isS17={isS17} />}
+        {tab === SOFT_LABEL && <SoftChart  isS17={isS17} />}
+        {tab === PAIRS_LABEL        && <PairsChart />}
+        {tab === DEV_LABEL    && <DeviationsChart isS17={isS17} />}
 
-        {tab !== 'Déviations' && <Legend showH17Diff={!isS17} />}
+        {tab !== DEV_LABEL && <Legend showH17Diff={!isS17} />}
       </div>
     </div>
   );
