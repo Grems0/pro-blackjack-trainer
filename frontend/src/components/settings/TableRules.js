@@ -1,5 +1,6 @@
 import React from 'react';
 import { useGame } from '../../contexts/GameContext';
+import { useLang } from '../../contexts/LanguageContext';
 import { Switch } from '../ui/switch';
 import InfoTooltip from '../ui/InfoTooltip';
 import {
@@ -23,20 +24,21 @@ function Row({ label, tooltip, children }) {
 
 export default function TableRules() {
   const { tableRules, setTableRules } = useGame();
+  const { t } = useLang();
 
   return (
     <div className="bg-[#2a2a2d] rounded-lg overflow-hidden">
       <div className="px-4 py-3 border-b border-gray-700">
-        <h2 className="text-emerald-400 font-semibold">Règles de la table</h2>
-        <p className="text-xs text-gray-500 mt-0.5">Configurez selon le casino que vous jouez</p>
+        <h2 className="text-emerald-400 font-semibold">{t('tr_title')}</h2>
+        <p className="text-xs text-gray-500 mt-0.5">{t('tr_subtitle')}</p>
       </div>
 
       <div className="p-4 space-y-4">
 
         {/* Nombre de jeux */}
         <Row
-          label="Nombre de jeux"
-          tooltip="Nombre de jeux de 52 cartes dans le sabot. En Europe : 6 ou 8 jeux sont standards. Moins de jeux = avantage compteur légèrement meilleur, mais rare en casino européen. Impact sur le True Count : TC = RC ÷ jeux restants."
+          label={t('tr_num_decks')}
+          tooltip={t('tr_tip_decks')}
         >
           <Select
             value={String(tableRules.numberOfDecks)}
@@ -57,8 +59,8 @@ export default function TableRules() {
 
         {/* Pénétration */}
         <Row
-          label="Pénétration"
-          tooltip="Pourcentage du sabot distribué avant le reshuffling. Plus la pénétration est élevée, plus vous avez de mains favorables à exploiter. En dessous de 65% : très mauvais. 75%+ : correct. 85%+ : excellent. C'est le facteur le plus important après les règles."
+          label={t('tr_penetration')}
+          tooltip={t('tr_tip_pen')}
         >
           <Select
             value={String(tableRules.penetration)}
@@ -79,8 +81,8 @@ export default function TableRules() {
 
         {/* S17 / H17 */}
         <Row
-          label="Croupier tire sur 17 mou (H17)"
-          tooltip="H17 = le croupier tire une carte supplémentaire sur Soft 17 (As + 6). S17 = il s'arrête. H17 augmente légèrement l'avantage du casino (~0.2%). En Europe, S17 est plus courant. Ce réglage modifie aussi votre Basic Strategy (ex : A,7 vs croupier)."
+          label={t('tr_h17')}
+          tooltip={t('tr_tip_h17')}
         >
           <Switch
             checked={tableRules.dealerHitsSoft17}
@@ -90,8 +92,8 @@ export default function TableRules() {
 
         {/* DAS */}
         <Row
-          label="Doubler après séparation (DAS)"
-          tooltip="Permet de doubler votre mise après avoir séparé une paire. En votre faveur (+0.14%). Peu courant dans les casinos européens — vérifiez avant de jouer. Modifie la stratégie de certaines paires (ex : 4,4 vs 5 ou 6)."
+          label={t('tr_das')}
+          tooltip={t('tr_tip_das')}
         >
           <Switch
             checked={tableRules.doubleAfterSplit}
@@ -101,8 +103,8 @@ export default function TableRules() {
 
         {/* Resplit Aces */}
         <Row
-          label="Re-séparation des As"
-          tooltip="Permet de séparer à nouveau une paire d'As si vous recevez un troisième As après la première séparation. Très avantageux (+0.08%). Rare en casino européen — la plupart n'autorisent qu'une séparation et une seule carte par As."
+          label={t('tr_rsa')}
+          tooltip={t('tr_tip_rsa')}
         >
           <Select
             value={tableRules.splitAces}
@@ -123,8 +125,8 @@ export default function TableRules() {
 
         {/* Max split hands */}
         <Row
-          label="Séparations maximales"
-          tooltip="Nombre maximum de mains que vous pouvez créer en séparant des paires. Ex : Max 4 mains = vous pouvez séparer jusqu'à 3 fois de suite si vous recevez des paires consécutives. Plus de mains = plus avantageux pour le joueur."
+          label={t('tr_max_splits')}
+          tooltip={t('tr_tip_splits')}
         >
           <Select
             value={String(tableRules.maxSplitHands)}
@@ -145,8 +147,8 @@ export default function TableRules() {
 
         {/* Abandon */}
         <Row
-          label="Abandon"
-          tooltip="Récupérez la moitié de votre mise en abandonnant votre main. 'Autorisé' = vous pouvez abandonner après avoir joué (mais perdez tout si BJ croupier). 'ES10' = abandon uniquement contre une carte 10 visible, avant que le croupier tire sa 2e carte — vous récupérez la moitié même si BJ croupier (+0.24%)."
+          label={t('tr_surrender')}
+          tooltip={t('tr_tip_surrender')}
         >
           <Select
             value={tableRules.surrender || 'none'}
@@ -156,10 +158,10 @@ export default function TableRules() {
               <SelectValue />
             </SelectTrigger>
             <SelectContent className="bg-[#2a2a2d] border-gray-700">
-              <SelectItem value="none" className="text-white">Non autorisé</SelectItem>
-              <SelectItem value="late" className="text-white">Autorisé</SelectItem>
+              <SelectItem value="none" className="text-white">{t('tr_surrender_no')}</SelectItem>
+              <SelectItem value="late" className="text-white">{t('tr_surrender_yes')}</SelectItem>
               <SelectItem value="es10" className="text-white">
-                <span>ES10 <span className="text-gray-400 text-xs">vs 10 seulement</span></span>
+                <span>{t('tr_surrender_es10')} <span className="text-gray-400 text-xs">vs 10 seulement</span></span>
               </SelectItem>
             </SelectContent>
           </Select>
@@ -167,8 +169,8 @@ export default function TableRules() {
 
         {/* Blackjack payout */}
         <Row
-          label="Paiement Blackjack"
-          tooltip="3:2 = paiement standard (une mise de 10€ rapporte 15€). 6:5 = paiement réduit présent dans certains casinos lowcost (+1.39% d'avantage pour le casino). Ne jamais jouer en 6:5 — l'avantage du comptage ne suffit pas à compenser."
+          label={t('tr_bj_payout')}
+          tooltip={t('tr_tip_bj')}
         >
           <Select
             value={tableRules.blackjackPayout || '3:2'}

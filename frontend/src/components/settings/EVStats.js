@@ -1,5 +1,6 @@
 import React from 'react';
 import { useGame } from '../../contexts/GameContext';
+import { useLang } from '../../contexts/LanguageContext';
 import InfoTooltip from '../ui/InfoTooltip';
 
 function StatBox({ label, value, sub, color, tooltip }) {
@@ -49,18 +50,39 @@ function computeBaseEdge(tableRules, additionalSettings) {
   return edge;
 }
 
-// ─── Distribution approx. du TC selon la pénétration ─────────────────────────
-// Plus la pénétration est élevée, plus les TC extrêmes sont fréquents.
+// ─── Distribution empirique du TC (données sim CVData, 6 jeux, 75% pen) ──────
+// Poids de base à 75% de pénétration. La pénétration réelle étire/compresse
+// les queues : plus de pen → plus de TC extrêmes, moins → distribution plus serrée.
+const BASE_TC_WEIGHTS = {
+  '-3': 0.080,
+  '-2': 0.100,
+  '-1': 0.160,
+   '0': 0.270,
+   '1': 0.170,
+   '2': 0.100,
+   '3': 0.060,
+   '4': 0.030,
+   '5': 0.020,
+   '6': 0.007,
+   '7': 0.003,
+};
+
 function getTCWeights(penFraction) {
+  const ref = 0.75;
+  const stretch = penFraction / ref; // >1 étire les queues, <1 les resserre
   const levels = [-3, -2, -1, 0, 1, 2, 3, 4, 5, 6, 7];
-  const mu = -0.3;                    // léger biais vers les TC négatifs
-  const sigma = 2.2 * (penFraction / 0.75); // étalée par la pénétration
-  const raw = levels.map(tc =>
-    Math.exp(-0.5 * Math.pow((tc - mu) / sigma, 2))
-  );
-  const sum = raw.reduce((a, b) => a + b, 0);
+  const raw = {};
+
+  levels.forEach(tc => {
+    const base = BASE_TC_WEIGHTS[String(tc)] ?? 0.001;
+    // TC proches de 0 sont peu affectés ; TC extrêmes proportionnellement plus
+    const dist = Math.abs(tc);
+    raw[tc] = tc === 0 ? base : base * Math.pow(stretch, dist * 0.4);
+  });
+
+  const sum = Object.values(raw).reduce((a, b) => a + b, 0);
   const weights = {};
-  levels.forEach((tc, i) => { weights[tc] = raw[i] / sum; });
+  levels.forEach(tc => { weights[tc] = raw[tc] / sum; });
   return weights;
 }
 
@@ -140,6 +162,7 @@ function calculateStats(playerSettings, betSpread, tableRules, additionalSetting
 
 export default function EVStats() {
   const { playerSettings, betSpread, tableRules, additionalSettings } = useGame();
+  const { t } = useLang();
   const s = calculateStats(playerSettings, betSpread, tableRules, additionalSettings);
 
   const evColor  = s.evPerHour  > 0  ? 'text-emerald-400' : 'text-red-400';
@@ -149,41 +172,41 @@ export default function EVStats() {
   return (
     <div className="bg-[#2a2a2d] rounded-lg overflow-hidden">
       <div className="px-4 py-3 border-b border-gray-700 flex items-center justify-between">
-        <h2 className="text-emerald-400 font-semibold">Statistiques EV</h2>
-        <span className="text-xs text-gray-500">Mise moy. ~€{s.avgBet.toFixed(0)}</span>
+        <h2 className="text-emerald-400 font-semibold">{t('ev_title')}</h2>
+        <span className="text-xs text-gray-500">{t('ev_avg_bet')} ~€{s.avgBet.toFixed(0)}</span>
       </div>
 
       <div className="p-3 grid grid-cols-2 gap-3">
         <StatBox
-          label="EV / heure"
+          label={t('ev_per_hour')}
           value={`${s.evPerHour >= 0 ? '+' : ''}€${s.evPerHour.toFixed(0)}`}
-          sub="gain attendu par heure"
+          sub={t('ev_per_hour_sub')}
           color={evColor}
-          tooltip="Gain moyen attendu par heure, calculé à partir de votre spread de mise, des règles de la table et de la pénétration. Varie en temps réel avec vos paramètres."
+          tooltip={t('ev_tip_ev')}
         />
 
         <StatBox
-          label="Écart-type / heure"
+          label={t('ev_std_dev')}
           value={`±€${s.sdPerHour.toFixed(0)}`}
-          sub="variance normale"
+          sub={t('ev_std_dev_sub')}
           color="text-white"
-          tooltip="Volatilité de vos résultats sur une heure. 68% du temps vos gains réels seront dans [EV − σ, EV + σ]. Élevé au blackjack — c'est la variance qui masque votre avantage à court terme."
+          tooltip={t('ev_tip_sd')}
         />
 
         <StatBox
-          label="Risque de ruine"
+          label={t('ev_ruin')}
           value={`${s.riskOfRuin.toFixed(1)}%`}
-          sub={s.riskOfRuin < 5 ? 'excellent' : s.riskOfRuin < 20 ? 'acceptable' : 'trop élevé'}
+          sub={s.riskOfRuin < 5 ? t('ev_ruin_good') : s.riskOfRuin < 20 ? t('ev_ruin_ok') : t('ev_ruin_bad')}
           color={rorColor}
-          tooltip="Probabilité de perdre toute votre bankroll avant d'être profitable. Objectif : sous 5%. Pour réduire : augmentez votre bankroll (plus d'unités) ou réduisez votre spread."
+          tooltip={t('ev_tip_ror')}
         />
 
         <StatBox
-          label="N-0 (heures)"
+          label={t('ev_n0')}
           value={s.n0Hours ? (s.n0Hours > 5000 ? '5 000+' : s.n0Hours.toLocaleString('fr-FR')) : '∞'}
-          sub="pour prouver l'avantage"
+          sub={t('ev_n0_sub')}
           color="text-white"
-          tooltip="Heures de jeu nécessaires pour que votre avantage statistique soit visible avec certitude (signal > bruit). Typiquement 200–1000h pour un compteur régulier."
+          tooltip={t('ev_tip_n0')}
         />
       </div>
 
@@ -191,8 +214,8 @@ export default function EVStats() {
       <div className="px-3 pb-3 space-y-2">
         <div className="bg-[#1a1a1d] rounded-lg px-3 py-2 flex items-center justify-between">
           <div className="flex items-center gap-1 text-xs text-gray-400">
-            Avantage joueur pondéré
-            <InfoTooltip text="Avantage moyen pondéré sur le casino en tenant compte de votre spread de mise et de la distribution du TC. Un compteur efficace vise +0.5% à +1%." />
+            {t('ev_edge_weighted')}
+            <InfoTooltip text={t('ev_tip_weighted')} />
           </div>
           <span className={`text-sm font-bold ${s.weightedEdgePct > 0 ? 'text-emerald-400' : 'text-red-400'}`}>
             {s.weightedEdgePct >= 0 ? '+' : ''}{s.weightedEdgePct.toFixed(2)}%
@@ -201,8 +224,8 @@ export default function EVStats() {
 
         <div className="bg-[#1a1a1d] rounded-lg px-3 py-2 flex items-center justify-between">
           <div className="flex items-center gap-1 text-xs text-gray-400">
-            Edge de base (sans comptage)
-            <InfoTooltip text="Avantage maison calculé uniquement à partir des règles de la table, sans comptage. Reflète l'impact des règles (H17, DAS, abandon, paiement BJ…) sur votre edge de départ." />
+            {t('ev_edge_base')}
+            <InfoTooltip text={t('ev_tip_base')} />
           </div>
           <span className={`text-sm font-bold ${s.baseEdge > 0 ? 'text-emerald-400' : 'text-red-400'}`}>
             {s.baseEdge >= 0 ? '+' : ''}{s.baseEdge.toFixed(2)}%

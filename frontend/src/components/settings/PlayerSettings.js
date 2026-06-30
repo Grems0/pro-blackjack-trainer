@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Trash2 } from 'lucide-react';
 import { useGame } from '../../contexts/GameContext';
+import { useLang } from '../../contexts/LanguageContext';
 import { Switch } from '../ui/switch';
 import InfoTooltip from '../ui/InfoTooltip';
 import {
@@ -57,6 +58,7 @@ export default function PlayerSettings() {
     loadTemplate,
     deleteTemplate,
   } = useGame();
+  const { t } = useLang();
   const [templateName, setTemplateName] = useState('');
 
   // Auto-calcul : mise unitaire = bankroll / nombre d'unités
@@ -88,23 +90,23 @@ export default function PlayerSettings() {
     <div className="bg-[#2a2a2d] rounded-lg overflow-hidden">
       {/* Header */}
       <div className="px-4 py-3 border-b border-gray-700">
-        <h2 className="text-emerald-400 font-semibold">Paramètres du joueur</h2>
-        <p className="text-xs text-gray-500 mt-0.5">Configurez votre bankroll et vos paramètres de session</p>
+        <h2 className="text-emerald-400 font-semibold">{t('ps_title')}</h2>
+        <p className="text-xs text-gray-500 mt-0.5">{t('ps_subtitle')}</p>
       </div>
 
       <div className="p-4 space-y-4">
 
         {/* Modèles sauvegardés */}
         <div>
-          <FieldLabel tooltip="Sauvegardez vos configurations (bankroll, spread, règles) pour les recharger rapidement selon le casino visé.">
-            Modèles sauvegardés
+          <FieldLabel tooltip={t('ps_tip_models')}>
+            {t('ps_models')}
           </FieldLabel>
 
           {/* Enregistrer un nouveau modèle */}
           <div className="flex gap-2 mt-2">
             <input
               type="text"
-              placeholder="Nom du modèle..."
+              placeholder={t('ps_model_placeholder')}
               value={templateName}
               onChange={(e) => setTemplateName(e.target.value)}
               className="flex-1 bg-[#1a1a1d] border border-gray-700 rounded px-3 py-2 text-white text-sm placeholder-gray-600"
@@ -125,25 +127,25 @@ export default function PlayerSettings() {
               }}
               className="px-3 py-2 bg-emerald-600 hover:bg-emerald-500 text-white text-sm font-semibold rounded transition-colors whitespace-nowrap"
             >
-              Enregistrer
+              {t('ps_save')}
             </button>
           </div>
 
           {/* Liste des modèles */}
           {savedTemplates.length > 0 && (
             <div className="mt-2 space-y-1">
-              {savedTemplates.map(t => (
-                <div key={t.id} className="flex items-center gap-2 bg-[#1a1a1d] rounded px-3 py-2">
+              {savedTemplates.map(tpl => (
+                <div key={tpl.id} className="flex items-center gap-2 bg-[#1a1a1d] rounded px-3 py-2">
                   <button
-                    onClick={() => loadTemplate(t.id)}
+                    onClick={() => loadTemplate(tpl.id)}
                     className="flex-1 text-left text-sm text-gray-200 hover:text-emerald-400 transition-colors"
                   >
-                    {t.name}
+                    {tpl.name}
                   </button>
                   <button
-                    onClick={() => deleteTemplate(t.id)}
+                    onClick={() => deleteTemplate(tpl.id)}
                     className="text-red-500 hover:text-red-400 transition-colors flex-shrink-0"
-                    title="Supprimer"
+                    title={t('ps_delete')}
                   >
                     <Trash2 className="w-4 h-4" />
                   </button>
@@ -152,7 +154,7 @@ export default function PlayerSettings() {
             </div>
           )}
           {savedTemplates.length === 0 && (
-            <p className="mt-1 text-xs text-gray-600">Aucun modèle enregistré</p>
+            <p className="mt-1 text-xs text-gray-600">{t('ps_no_models')}</p>
           )}
         </div>
 
@@ -160,8 +162,8 @@ export default function PlayerSettings() {
 
         {/* Bankroll */}
         <div>
-          <FieldLabel tooltip="Votre bankroll totale dédiée au blackjack. Ne jouez jamais avec de l'argent dont vous avez besoin. Règle : une bankroll saine = 200 à 300 unités minimum.">
-            Bankroll disponible
+          <FieldLabel tooltip={t('ps_tip_bankroll')}>
+            {t('ps_bankroll')}
           </FieldLabel>
           <div className="relative mt-2">
             <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-sm">€</span>
@@ -177,8 +179,8 @@ export default function PlayerSettings() {
         {/* Mise unitaire + Nombre d'unités */}
         <div className="grid grid-cols-2 gap-3">
           <div>
-            <FieldLabel tooltip="Votre mise de base (1 unité). Règle d'or : 1/200e à 1/300e de votre bankroll. Ex : bankroll 3 000 € → unité 10-15 €. Se calcule automatiquement depuis la bankroll et le nombre d'unités.">
-              Mise unitaire (1u)
+            <FieldLabel tooltip={t('ps_tip_unit')}>
+              {t('ps_unit_bet')}
             </FieldLabel>
             <div className="relative mt-2">
               <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-sm">€</span>
@@ -191,8 +193,8 @@ export default function PlayerSettings() {
             </div>
           </div>
           <div>
-            <FieldLabel tooltip="Nombre d'unités que représente votre bankroll. Minimum recommandé : 200 unités pour un risque de ruine acceptable (< 5 %). Plus ce nombre est élevé, plus votre bankroll est solide.">
-              Nombre d'unités
+            <FieldLabel tooltip={t('ps_tip_units')}>
+              {t('ps_num_units')}
             </FieldLabel>
             <input
               type="number"
@@ -212,18 +214,18 @@ export default function PlayerSettings() {
             : 'bg-red-900/20 border-red-800 text-red-400'
         }`}>
           {playerSettings.numberOfUnits >= 200
-            ? `✓ Bankroll solide — ${playerSettings.numberOfUnits} unités (risque de ruine faible)`
+            ? `${t('ps_unit_solid')} — ${playerSettings.numberOfUnits} unités (risque de ruine faible)`
             : playerSettings.numberOfUnits >= 100
-            ? `⚠ Bankroll limite — ${playerSettings.numberOfUnits} unités (risque modéré, visez 200+)`
-            : `✗ Bankroll insuffisante — ${playerSettings.numberOfUnits} unités (risque de ruine élevé)`}
+            ? `${t('ps_unit_limit')} — ${playerSettings.numberOfUnits} unités (risque modéré, visez 200+)`
+            : `${t('ps_unit_weak')} — ${playerSettings.numberOfUnits} unités (risque de ruine élevé)`}
         </div>
 
         <div className="border-t border-gray-800" />
 
         {/* Spread de mise */}
         <Row
-          label="Spread de mise"
-          tooltip="Ratio entre votre mise minimum et maximum. Ex : 1-10 = vous misez 1u quand le TC est négatif, 10u quand il est très positif. Un spread plus élevé = plus de gain, mais plus de visibilité pour le casino."
+          label={t('ps_bet_spread')}
+          tooltip={t('ps_tip_spread')}
         >
           <Select
             value={playerSettings.spreadType}
@@ -244,8 +246,8 @@ export default function PlayerSettings() {
 
         {/* Estimation auto des tours */}
         <Row
-          label="Estimation auto tours/heure"
-          tooltip="Activez pour que l'app calcule automatiquement votre nombre de mains par heure selon la vitesse de table et le nombre de joueurs assis. Désactivez pour entrer manuellement."
+          label={t('ps_auto_rounds')}
+          tooltip={t('ps_tip_auto')}
         >
           <Switch
             checked={playerSettings.estimateRoundsPerHour}
@@ -256,8 +258,8 @@ export default function PlayerSettings() {
         {playerSettings.estimateRoundsPerHour ? (
           <div className="grid grid-cols-3 gap-3">
             <div>
-              <FieldLabel tooltip="Nombre de joueurs assis à votre table (vous inclus). Plus il y a de joueurs, moins vous recevez de mains par heure — mais plus de cartes passent, ce qui est utile pour le comptage.">
-                Joueurs à la table
+              <FieldLabel tooltip={t('ps_tip_players')}>
+                {t('ps_players')}
               </FieldLabel>
               <Select
                 value={String(playerSettings.numberOfPlayers)}
@@ -280,8 +282,8 @@ export default function PlayerSettings() {
               </Select>
             </div>
             <div>
-              <FieldLabel tooltip="Vitesse du croupier. Lente ≈ 70 mains/h seul, Moyenne ≈ 90 mains/h seul, Rapide ≈ 120 mains/h seul. En casino européen à 2-3 joueurs, comptez 60-90 mains/h.">
-                Vitesse de table
+              <FieldLabel tooltip={t('ps_tip_speed')}>
+                {t('ps_speed')}
               </FieldLabel>
               <Select
                 value={playerSettings.tableSpeed}
@@ -303,8 +305,8 @@ export default function PlayerSettings() {
               </Select>
             </div>
             <div>
-              <FieldLabel tooltip="Résultat estimé : nombre de mains que vous jouez par heure dans cette configuration. Utilisé pour calculer l'EV horaire.">
-                Mains/heure (estimé)
+              <FieldLabel tooltip={t('ps_tip_hands_est')}>
+                {t('ps_hands_est')}
               </FieldLabel>
               <div className="mt-1 bg-[#1a1a1d] border border-gray-700 rounded px-3 py-2 text-emerald-400 font-bold text-sm">
                 ~{playerSettings.roundsPerHour}
@@ -313,8 +315,8 @@ export default function PlayerSettings() {
           </div>
         ) : (
           <div>
-            <FieldLabel tooltip="Entrez manuellement votre estimation de mains jouées par heure dans votre casino habituel. En Europe : ~60-80 mains/h est typique.">
-              Mains jouées / heure
+            <FieldLabel tooltip={t('ps_tip_hands_manual')}>
+              {t('ps_hands_manual')}
             </FieldLabel>
             <input
               type="number"
@@ -325,27 +327,6 @@ export default function PlayerSettings() {
           </div>
         )}
 
-        <div className="border-t border-gray-800" />
-
-        {/* Diviseur de sabot */}
-        <Row
-          label="Précision True Count"
-          tooltip="Définit la précision d'estimation des jeux restants pour calculer le True Count. Par demi-jeu = vous arrondissez au 0,5 le plus proche (recommandé en casino). Jeu entier = arrondi à l'entier (plus simple, moins précis). Quart de jeu = très précis, difficile en conditions réelles."
-        >
-          <Select
-            value={playerSettings.deckDivisor}
-            onValueChange={(v) => setPlayerSettings({ deckDivisor: v })}
-          >
-            <SelectTrigger className="w-48 bg-[#1a1a1d] border border-emerald-700/60 text-emerald-300 text-sm font-semibold rounded-md px-3">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent className="bg-[#2a2a2d] border-gray-700">
-              {deckDivisorOptions.map(opt => (
-                <SelectItem key={opt.value} value={opt.value} className="text-white">{opt.label}</SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </Row>
 
       </div>
     </div>

@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { ChevronDown, ChevronUp } from 'lucide-react';
 import { useGame } from '../../contexts/GameContext';
+import { useLang } from '../../contexts/LanguageContext';
 import { Switch } from '../ui/switch';
 import InfoTooltip from '../ui/InfoTooltip';
 import {
@@ -22,6 +23,7 @@ function Row({ label, tooltip, children }) {
 
 export default function AdditionalSettings() {
   const { additionalSettings, setAdditionalSettings } = useGame();
+  const { t } = useLang();
   const [open, setOpen] = useState(false);
 
   return (
@@ -33,9 +35,9 @@ export default function AdditionalSettings() {
           onClick={() => setOpen(!open)}
           className="w-full flex items-center justify-between px-4 py-3"
         >
-          <h3 className="text-emerald-400 font-semibold">Paramètres avancés</h3>
+          <h3 className="text-emerald-400 font-semibold">{t('as_title')}</h3>
           <div className="flex items-center gap-1 text-gray-500">
-            <span className="text-xs">{open ? 'Réduire' : 'Déplier'}</span>
+            <span className="text-xs">{open ? t('as_collapse') : t('as_expand')}</span>
             {open ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
           </div>
         </button>
@@ -45,8 +47,8 @@ export default function AdditionalSettings() {
 
             {/* Règle de double */}
             <Row
-              label="Règle de double"
-              tooltip="Définit sur quelles mains vous pouvez doubler. 'Sur 2 premières cartes' = toujours autorisé (règle standard en Europe). '9-10-11 seulement' = restriction qui vous désavantage légèrement. '10-11 seulement' = encore plus restrictif. Vérifiez au casino."
+              label={t('as_double_rule')}
+              tooltip={t('as_tip_double')}
             >
               <Select
                 value={additionalSettings.doubleRule || 'any2'}
@@ -56,17 +58,17 @@ export default function AdditionalSettings() {
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent className="bg-[#2a2a2d] border-gray-700">
-                  <SelectItem value="any2" className="text-white">Sur 2 premières cartes ★</SelectItem>
-                  <SelectItem value="9-10-11" className="text-white">9, 10 ou 11 seulement</SelectItem>
-                  <SelectItem value="10-11" className="text-white">10 ou 11 seulement</SelectItem>
+                  <SelectItem value="any2" className="text-white">{t('as_double_any')}</SelectItem>
+                  <SelectItem value="9-10-11" className="text-white">{t('as_double_9')}</SelectItem>
+                  <SelectItem value="10-11" className="text-white">{t('as_double_10')}</SelectItem>
                 </SelectContent>
               </Select>
             </Row>
 
             {/* Spread par défaut — jouer toutes les mains */}
             <Row
-              label="Jouer toutes les mains"
-              tooltip="Désactivé : vous ne jouez que les mains définies dans votre bet spread (vous pouvez quitter la table aux counts négatifs). Activé : vous jouez toutes les mains quelle que soit la mise. En casino, il est souvent préférable de rester assis pour ne pas attirer l'attention."
+              label={t('as_play_all')}
+              tooltip={t('as_tip_play_all')}
             >
               <Switch
                 checked={additionalSettings.defaultBetSpreadsPlayAll || false}
@@ -76,8 +78,8 @@ export default function AdditionalSettings() {
 
             {/* Flexible 1 ou 2 mains */}
             <Row
-              label="1 ou 2 mains (flexible)"
-              tooltip="Activé : votre bet spread peut inclure des entrées à 2 mains simultanées aux True Counts élevés — vous misez sur deux cases à la fois pour maximiser l'avantage. Désactivé : vous ne jouez qu'une seule main à la fois. Jouer 2 mains augmente l'EV mais attire l'attention."
+              label={t('as_flex_hands')}
+              tooltip={t('as_tip_flex')}
             >
               <Switch
                 checked={additionalSettings.flexibleOneOrTwoHands !== false}
@@ -89,8 +91,8 @@ export default function AdditionalSettings() {
 
             {/* Système de comptage */}
             <Row
-              label="Système de comptage"
-              tooltip="Hi-Lo est le système recommandé : simple, efficace, et base de toutes les déviations enseignées ici. 2-6 = +1 | 7-9 = 0 | 10-A = -1. KO (Knockout) est non-balancé : pas de True Count nécessaire, plus simple mais moins précis. Hi-Opt II et Omega II sont plus puissants mais complexes."
+              label={t('as_count_system')}
+              tooltip={t('as_tip_system')}
             >
               <Select
                 value={additionalSettings.countingSystem}
@@ -111,8 +113,8 @@ export default function AdditionalSettings() {
 
             {/* Méthode True Count */}
             <Row
-              label="Méthode True Count"
-              tooltip="Comment convertir le Running Count en True Count. Truncate (vers zéro) = méthode BJA recommandée : RC 7 ÷ 2.5 sabots = TC 2 (pas 3). Plus conservateur. Floor (vers le bas) = identique aux positifs. Round = arrondi classique, légèrement plus agressif mais moins précis."
+              label={t('as_tc_method')}
+              tooltip={t('as_tip_tc_method')}
             >
               <Select
                 value={additionalSettings.trueCountMethod}
@@ -133,8 +135,8 @@ export default function AdditionalSettings() {
 
             {/* Précision estimation sabot */}
             <Row
-              label="Précision estimation sabot"
-              tooltip="Granularité pour estimer les sabots restants. Demi-sabot = arrondi au 0.5 (ex : 2.5, 3.0, 3.5) — recommandé en conditions réelles. Quart de sabot = plus précis mais difficile en casino. Sabot complet = entiers seulement, moins précis mais plus simple."
+              label={t('as_shoe_prec')}
+              tooltip={t('as_tip_shoe')}
             >
               <Select
                 value={additionalSettings.deckEstimationPrecision}
@@ -144,9 +146,9 @@ export default function AdditionalSettings() {
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent className="bg-[#2a2a2d] border-gray-700">
-                  <SelectItem value="full" className="text-white">Diviser par jeu entier</SelectItem>
-                  <SelectItem value="half" className="text-white">Par demi-jeu ★</SelectItem>
-                  <SelectItem value="quarter" className="text-white">Par quart de jeu</SelectItem>
+                  <SelectItem value="full" className="text-white">{t('as_shoe_whole')}</SelectItem>
+                  <SelectItem value="half" className="text-white">{t('as_shoe_half')}</SelectItem>
+                  <SelectItem value="quarter" className="text-white">{t('as_shoe_quarter')}</SelectItem>
                 </SelectContent>
               </Select>
             </Row>
