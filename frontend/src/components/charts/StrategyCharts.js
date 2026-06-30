@@ -416,7 +416,7 @@ export function DeviationsChart({ isS17 }) {
             {upDevs.map((d, i) => {
               const isEnhc = enhcHands.has(d.playerHand) && d.dealerCard === 'A';
               const isH17s = h17SpecificHands.has(d.playerHand);
-              const bsAction = d.action.includes('Doubler') ? 'Tirer' : d.action.includes('Rester') ? 'Tirer' : 'Tirer';
+              const bsAction = t('charts_legend_hit');
               return (
                 <tr key={i} style={{ background: i % 2 === 0 ? '#141414' : '#111' }}>
                   <td style={{ ...TD_BASE, color: '#555', fontWeight: 700, width: 36 }}>{i + 1}</td>
@@ -458,8 +458,8 @@ export function DeviationsChart({ isS17 }) {
                 <td style={{ ...TD_BASE, color: '#555', fontWeight: 700, width: 36 }}>{upDevs.length + i + 1}</td>
                 <td style={{ ...TD_BASE, color: '#e0e0e0', fontWeight: 600 }}>{d.playerHand}</td>
                 <td style={TD_BASE}><DkBadge card={d.dealerCard} /></td>
-                <td style={{ ...TD_BASE, color: '#666', fontSize: 11 }}>Rester</td>
-                <td style={{ ...TD_BASE, color: '#fca5a5', fontWeight: 600, fontSize: 11 }}>Tirer</td>
+                <td style={{ ...TD_BASE, color: '#666', fontSize: 11 }}>{t('charts_legend_stand')}</td>
+                <td style={{ ...TD_BASE, color: '#fca5a5', fontWeight: 600, fontSize: 11 }}>{t('charts_legend_hit')}</td>
                 <td style={TD_BASE}><TcBadge tc={d.trueCount} direction="down" /></td>
               </tr>
             ))}
@@ -492,9 +492,9 @@ export function DeviationsChart({ isS17 }) {
                   </td>
                   <td style={TD_BASE}><DkBadge card={d.dealerCard} /></td>
                   <td style={{ ...TD_BASE, color: '#666', fontSize: 11 }}>
-                    {d.playerHand === '8,8' ? 'Séparer' : d.playerHand === '15' || d.playerHand === '14' ? 'Tirer / Rester' : 'Tirer'}
+                    {d.playerHand === '8,8' ? t('charts_legend_split') : d.playerHand === '15' || d.playerHand === '14' ? `${t('charts_legend_hit')} / ${t('charts_legend_stand')}` : t('charts_legend_hit')}
                   </td>
-                  <td style={{ ...TD_BASE, color: '#fca5a5', fontWeight: 600, fontSize: 11 }}>Abandonner</td>
+                  <td style={{ ...TD_BASE, color: '#fca5a5', fontWeight: 600, fontSize: 11 }}>{t('charts_legend_surr')}</td>
                   <td style={TD_BASE}><SurrenderBadge tc={d.trueCount} /></td>
                 </tr>
               );
