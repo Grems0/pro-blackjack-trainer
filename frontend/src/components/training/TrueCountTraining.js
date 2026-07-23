@@ -6,7 +6,7 @@ import { useGame } from '../../contexts/GameContext';
 import { useLang } from '../../contexts/LanguageContext';
 import StrategyCharts from '../charts/StrategyCharts';
 
-const TOTAL_CARDS = 312;
+const TOTAL_CARDS = 312; // fallback for sub-functions; component uses tableRules.numberOfDecks * 52
 
 function precisionStep(p) {
   return p === 'quarter' ? 0.25 : p === 'half' ? 0.5 : 1.0;
@@ -24,8 +24,8 @@ function fmtTime(s) {
   return `${String(Math.floor(s / 60)).padStart(2, '0')}:${String(s % 60).padStart(2, '0')}`;
 }
 
-function realisticRC(cardsInTray) {
-  const variance = (cardsInTray * (TOTAL_CARDS - cardsInTray)) / TOTAL_CARDS * (40 / 52);
+function realisticRC(cardsInTray, totalCards = TOTAL_CARDS) {
+  const variance = (cardsInTray * (totalCards - cardsInTray)) / totalCards * (40 / 52);
   const std = Math.sqrt(variance);
   const u1 = Math.max(1e-10, Math.random());
   const z = Math.sqrt(-2 * Math.log(u1)) * Math.cos(2 * Math.PI * Math.random());
@@ -640,7 +640,7 @@ function WrongBreakdown({ scenario, onNext }) {
     { l: t('tc_running_count'),             v: fmtRC(rc) },
     { l: t('tc_cards_in_discard'),        v: `${cardsInTray}` },
     { l: t('tc_decks_in_tray'),          v: (cardsInTray/52).toFixed(2) },
-    { l: t('tc_cards_left_detail'),               v: `${TOTAL_CARDS - cardsInTray}` },
+    { l: t('tc_cards_left_detail'),               v: `${totalCards - cardsInTray}` },
     { l: t('tc_exact_decks'),          v: exactDecksRemaining.toFixed(3), hi: true },
     { l: `${t('tc_estimated_decks')} (÷ ${divLabel})`,   v: fmtN(estimatedDecks), hi: true },
     { l: t('tc_exact_tc'),         v: exactTC.toFixed(3) },
@@ -675,6 +675,7 @@ function WrongBreakdown({ scenario, onNext }) {
 }
 
 function CorrectFlash() {
+  const { t } = useLang();
   return (
     <div className="bg-[#2a2a2d] rounded-xl p-6 flex flex-col items-center gap-3">
       <div className="w-14 h-14 rounded-full bg-emerald-500 flex items-center justify-center">
@@ -691,7 +692,8 @@ function CorrectFlash() {
 export default function TrueCountTraining() {
   const navigate = useNavigate();
   const { t } = useLang();
-  const { currentModule, additionalSettings } = useGame();
+  const { currentModule, additionalSettings, tableRules } = useGame();
+  const totalCards = (tableRules?.numberOfDecks || 6) * 52;
   const [showChart, setShowChart] = useState(false);
 
   const duration = currentModule?.config?.duration || '1:30';
@@ -713,10 +715,11 @@ export default function TrueCountTraining() {
   const [showHelpers,  setShowHelpers] = useState(true);
 
   const generate = useCallback(() => {
-    const step26      = Math.floor(Math.random() * 11) + 1;
-    const cardsInTray = step26 * 26;
-    const exact       = (TOTAL_CARDS - cardsInTray) / 52;
-    const rc          = realisticRC(cardsInTray);
+    const maxStep     = Math.floor((totalCards - 26) / 13);
+    const step13      = Math.floor(Math.random() * maxStep) + 1;
+    const cardsInTray = step13 * 13;
+    const exact       = (totalCards - cardsInTray) / 52;
+    const rc          = realisticRC(cardsInTray, totalCards);
     const est         = roundDecks(exact, step);
     const exactTC     = rc / exact;
     const expectedTC  = applyTC(rc, est, tcMethod);
@@ -762,7 +765,7 @@ export default function TrueCountTraining() {
     );
   }
 
-  const cardsRemaining = TOTAL_CARDS - scenario.cardsInTray;
+  const cardsRemaining = totalCards - scenario.cardsInTray;
   const timeLeft = maxTime - timer;
   const timerColor = timeLeft <= 30 ? '#f87171' : timeLeft <= 60 ? '#c9a84c' : '#4ade80';
 

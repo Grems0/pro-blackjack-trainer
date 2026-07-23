@@ -97,6 +97,51 @@ input[type="range"]::-moz-range-thumb {
   animation: dealCard 0.3s ease-out;
 }
 
+/* Distribution depuis le sabot (haut-droite), trajectoire + rotation réalistes */
+@keyframes dealFromShoe {
+  0% {
+    transform: translate(140px, -120px) rotate(14deg) scale(0.92);
+    opacity: 0;
+  }
+  60% {
+    opacity: 1;
+  }
+  80% {
+    transform: translate(-4px, 3px) rotate(-2deg) scale(1.01);
+  }
+  100% {
+    transform: translate(0, 0) rotate(0) scale(1);
+  }
+}
+
+.card-deal-in {
+  animation: dealFromShoe 0.28s cubic-bezier(0.22, 0.9, 0.35, 1) backwards;
+}
+
+/* Bonne réponse : le laiton de la table s'illumine */
+@keyframes brassGlow {
+  0%, 100% {
+    filter: none;
+  }
+  35% {
+    filter: drop-shadow(0 0 18px rgba(201, 168, 76, 0.55)) brightness(1.06);
+  }
+}
+
+.brass-glow {
+  animation: brassGlow 0.9s ease-in-out;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .card-deal,
+  .card-deal-in,
+  .brass-glow,
+  .pulse-correct,
+  .shake-incorrect {
+    animation: none !important;
+  }
+}
+
 /* Chip hover effect */
 .chip-hover:hover {
   transform: translateY(-5px);

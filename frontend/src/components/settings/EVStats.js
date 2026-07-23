@@ -1,7 +1,8 @@
-import React from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useGame } from '../../contexts/GameContext';
 import { useLang } from '../../contexts/LanguageContext';
 import InfoTooltip from '../ui/InfoTooltip';
+import { runMonteCarlo } from '../../utils/monteCarlo';
 
 function StatBox({ label, value, sub, color, tooltip }) {
   return (
@@ -34,8 +35,9 @@ function computeBaseEdge(tableRules, additionalSettings) {
   if (!tableRules.doubleAfterSplit) edge -= 0.14;
 
   // Abandon
-  if (tableRules.surrender === 'late') edge += 0.07;
-  if (tableRules.surrender === 'es10') edge += 0.24;
+  if (tableRules.surrender === 'late')  edge += 0.07;
+  if (tableRules.surrender === 'early') edge += 0.62;
+  if (tableRules.surrender === 'es10')  edge += 0.24;
 
   // Paiement BJ
   if (tableRules.blackjackPayout === '6:5') edge -= 1.39;
@@ -45,7 +47,7 @@ function computeBaseEdge(tableRules, additionalSettings) {
   if (additionalSettings?.doubleRule === '10-11')   edge -= 0.25;
 
   // Re-séparation des As
-  if (tableRules.splitAces === 'resplit') edge += 0.08;
+  if (tableRules.splitAces === 'resplit') edge += 0.06;
 
   return edge;
 }
@@ -165,9 +167,81 @@ export default function EVStats() {
   const { t } = useLang();
   const s = calculateStats(playerSettings, betSpread, tableRules, additionalSettings);
 
-  const evColor  = s.evPerHour  > 0  ? 'text-emerald-400' : 'text-red-400';
-  const rorColor = s.riskOfRuin < 5  ? 'text-emerald-400'
-                 : s.riskOfRuin < 20 ? 'text-amber-400'   : 'text-red-400';
+  const [mcStats, setMcStats]       = useState(null); // { ror, evPerHour, sdPerHour, n0Hours }
+  const [rorLoading, setRorLoading] = useState(true);
+  const [progress, setProgress]     = useState(0);
+  const workerRef = useRef(null);
+  const timerRef  = useRef(null);
+
+  useEffect(() => {
+    setRorLoading(true);
+    setProgress(0);
+    if (timerRef.current) clearTimeout(timerRef.current);
+
+    // Debounce 700ms avant de lancer la simulation
+    timerRef.current = setTimeout(() => {
+      // Terminate previous worker if still running
+      if (workerRef.current) { workerRef.current.terminate(); workerRef.current = null; }
+
+      const penValue = parseFloat(tableRules.penetration) || 4.5;
+      const numDecks = tableRules.numberOfDecks || 6;
+
+      try {
+        const worker = new Worker(
+          new URL('../../workers/bjSimulator.worker.js', import.meta.url)
+        );
+        workerRef.current = worker;
+
+        worker.onmessage = (e) => {
+          if (e.data.type === 'progress') {
+            setProgress(Math.round(e.data.value * 100));
+          } else if (e.data.type === 'result') {
+            setMcStats({ ror: e.data.ror, evPerHour: e.data.evPerHour, sdPerHour: e.data.sdPerHour, n0Hours: e.data.n0Hours });
+            setRorLoading(false);
+            worker.terminate();
+            workerRef.current = null;
+          }
+        };
+
+        worker.onerror = () => {
+          setMcStats(null);
+          setRorLoading(false);
+          workerRef.current = null;
+        };
+
+        worker.postMessage({
+          numDecks,
+          penetration: Math.min(penValue / numDecks, 0.99),
+          betSpread,
+          bankroll: playerSettings.availableFunds || 0,
+          tableRules,
+          additionalSettings,
+          roundsPerHour: playerSettings.roundsPerHour || 80,
+          numPlayers: playerSettings.numPlayers || 5,
+          numSessions: 1500,
+        });
+      } catch {
+        setMcStats(null);
+        setRorLoading(false);
+      }
+    }, 700);
+
+    return () => {
+      clearTimeout(timerRef.current);
+      if (workerRef.current) { workerRef.current.terminate(); workerRef.current = null; }
+    };
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [betSpread, playerSettings.availableFunds, tableRules, additionalSettings]);
+
+  // Use MC results when available, fallback to analytical during loading
+  const evPerHour = mcStats ? mcStats.evPerHour : s.evPerHour;
+  const sdPerHour = mcStats ? mcStats.sdPerHour : s.sdPerHour;
+  const n0Hours   = mcStats ? mcStats.n0Hours   : s.n0Hours;
+  const rorValue  = mcStats ? mcStats.ror        : s.riskOfRuin;
+
+  const evColor  = evPerHour > 0  ? 'text-emerald-400' : 'text-red-400';
+  const rorColor = rorValue  < 5  ? 'text-emerald-400'
+                 : rorValue  < 20 ? 'text-amber-400'   : 'text-red-400';
 
   return (
     <div className="bg-[#2a2a2d] rounded-lg overflow-hidden">
@@ -179,33 +253,51 @@ export default function EVStats() {
       <div className="p-3 grid grid-cols-2 gap-3">
         <StatBox
           label={t('ev_per_hour')}
-          value={`${s.evPerHour >= 0 ? '+' : ''}€${s.evPerHour.toFixed(0)}`}
+          value={rorLoading ? '…' : `${evPerHour >= 0 ? '+' : ''}€${evPerHour.toFixed(0)}`}
           sub={t('ev_per_hour_sub')}
-          color={evColor}
+          color={rorLoading ? 'text-gray-400' : evColor}
           tooltip={t('ev_tip_ev')}
         />
 
         <StatBox
           label={t('ev_std_dev')}
-          value={`±€${s.sdPerHour.toFixed(0)}`}
+          value={rorLoading ? '…' : `±€${sdPerHour.toFixed(0)}`}
           sub={t('ev_std_dev_sub')}
-          color="text-white"
+          color={rorLoading ? 'text-gray-400' : 'text-white'}
           tooltip={t('ev_tip_sd')}
         />
 
-        <StatBox
-          label={t('ev_ruin')}
-          value={`${s.riskOfRuin.toFixed(1)}%`}
-          sub={s.riskOfRuin < 5 ? t('ev_ruin_good') : s.riskOfRuin < 20 ? t('ev_ruin_ok') : t('ev_ruin_bad')}
-          color={rorColor}
-          tooltip={t('ev_tip_ror')}
-        />
+        <div className="text-center p-3 bg-[#1a1a1d] rounded-lg">
+          <div className="flex items-center justify-center gap-1 mb-1">
+            <p className="text-gray-400 text-xs uppercase tracking-wider">{t('ev_ruin')}</p>
+            <InfoTooltip text={t('ev_tip_ror')} />
+          </div>
+          {rorLoading ? (
+            <>
+              <p className="text-xl font-bold text-gray-400">…</p>
+              <div className="mt-1.5 w-full bg-gray-700 rounded-full h-1">
+                <div
+                  className="bg-emerald-500 h-1 rounded-full transition-all duration-300"
+                  style={{ width: `${progress}%` }}
+                />
+              </div>
+              <p className="text-gray-500 text-xs mt-0.5">Monte Carlo {progress}%</p>
+            </>
+          ) : (
+            <>
+              <p className={`text-xl font-bold ${rorColor}`}>{rorValue.toFixed(2)}%</p>
+              <p className="text-gray-500 text-xs mt-0.5">
+                {rorValue < 5 ? t('ev_ruin_good') : rorValue < 20 ? t('ev_ruin_ok') : t('ev_ruin_bad')}
+              </p>
+            </>
+          )}
+        </div>
 
         <StatBox
           label={t('ev_n0')}
-          value={s.n0Hours ? (s.n0Hours > 5000 ? '5 000+' : s.n0Hours.toLocaleString('fr-FR')) : '∞'}
+          value={rorLoading ? '…' : (n0Hours ? (n0Hours > 5000 ? '5 000+' : n0Hours.toLocaleString('fr-FR')) : '∞')}
           sub={t('ev_n0_sub')}
-          color="text-white"
+          color={rorLoading ? 'text-gray-400' : 'text-white'}
           tooltip={t('ev_tip_n0')}
         />
       </div>

@@ -1,50 +1,22 @@
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import Header from '../components/layout/Header';
+import { useLang } from '../contexts/LanguageContext';
 import { Check, X, Zap, Crown, ChevronDown, ChevronUp } from 'lucide-react';
 
-const FEATURES = [
-  { label: 'Module Running Count',                        free: true,  pro: true  },
-  { label: 'Module Stratégie de base',                    free: true,  pro: true  },
-  { label: 'Tableaux de stratégie S17/H17',               free: false, pro: true  },
-  { label: 'Académie (toute la théorie)',                  free: false, pro: true  },
-  { label: 'Module True Count',                           free: false, pro: true  },
-  { label: 'Module Déviations (Illustrious 18 + Fab 4)', free: false, pro: true  },
-  { label: 'Simulation Casino complète',                  free: false, pro: true  },
-  { label: 'Statistiques EV',                             free: false, pro: true  },
-  { label: 'Mode révision type Anki',                     free: true,  pro: true  },
-  { label: 'Parcours guidé recommandé',                   free: false, pro: true  },
-];
-
-const FAQS = [
-  {
-    q: 'Puis-je annuler à tout moment ?',
-    a: "Oui. L'abonnement mensuel peut être annulé avant la prochaine date de facturation, sans frais. L'annuel est remboursable dans les 14 jours suivant l'achat.",
-  },
-  {
-    q: "Quelle est la différence entre l'abonnement mensuel et annuel ?",
-    a: "Les fonctionnalités sont identiques. L'annuel est facturé en une seule fois (99 €) et revient à 8,25 €/mois — soit une économie de 57 € par rapport au mensuel.",
-  },
-  {
-    q: "À qui s'adresse Pro Blackjack Trainer ?",
-    a: "Aux joueurs sérieux qui veulent maîtriser le comptage de cartes Hi-Lo en ENHC. Que tu démarres ou que tu affines ta technique, les modules couvrent tout — du Running Count à la Simulation Casino.",
-  },
-  {
-    q: 'Est-ce que le plan gratuit restera gratuit ?',
-    a: "Oui. Les modules Running Count et Stratégie de base restent gratuits indéfiniment.",
-  },
-  {
-    q: 'Puis-je passer du mensuel à l\'annuel plus tard ?',
-    a: "Oui, tu peux changer de formule à tout moment depuis le portail client Stripe. Le solde restant est automatiquement appliqué en crédit.",
-  },
-];
-
 function PlanCard({ billing, onSubscribe, loading }) {
+  const { t } = useLang();
   const isAnnual = billing === 'annual';
   const monthlyPrice = 12.99;
   const annualTotal  = 99;
   const annualMonthly = (annualTotal / 12).toFixed(2);
   const saving = Math.round((1 - annualTotal / (monthlyPrice * 12)) * 100);
+
+  const FEATURES = Array.from({ length: 10 }, (_, i) => ({
+    label: t(`pricing_feat_${i + 1}`),
+    free: [true, true, false, false, false, false, false, false, true, false][i],
+    pro: true,
+  }));
 
   return (
     <div style={{
@@ -67,11 +39,11 @@ function PlanCard({ billing, onSubscribe, loading }) {
             <div style={{ width: 36, height: 36, borderRadius: 10, background: 'rgba(201,168,76,0.15)', border: '1px solid rgba(201,168,76,0.3)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
               <Crown size={18} color="#c9a84c" />
             </div>
-            <span style={{ color: '#fff', fontSize: 20, fontWeight: 800 }}>Pro</span>
+            <span style={{ color: '#fff', fontSize: 20, fontWeight: 800 }}>{t('pricing_pro')}</span>
           </div>
           {isAnnual && (
             <span style={{ background: 'rgba(201,168,76,0.15)', border: '1px solid rgba(201,168,76,0.3)', borderRadius: 20, padding: '4px 12px', color: '#c9a84c', fontSize: 11, fontWeight: 800, letterSpacing: 0.5 }}>
-              -{saving}% sur l'année
+              {t('pricing_save_badge').replace('{pct}', saving)}
             </span>
           )}
         </div>
@@ -83,22 +55,22 @@ function PlanCard({ billing, onSubscribe, loading }) {
               {isAnnual ? annualMonthly : monthlyPrice.toFixed(2)}
             </span>
             <span style={{ color: '#555', fontSize: 16 }}>€</span>
-            <span style={{ color: '#555', fontSize: 14, marginLeft: 2 }}>/mois</span>
+            <span style={{ color: '#555', fontSize: 14, marginLeft: 2 }}>{t('pricing_per_month')}</span>
           </div>
           {isAnnual && (
             <p style={{ color: '#666', fontSize: 12, margin: '4px 0 0' }}>
-              Facturé {annualTotal} € par an · économise 57 €
+              {t('pricing_billed_annual').replace('{total}', annualTotal)}
             </p>
           )}
           {!isAnnual && (
             <p style={{ color: '#666', fontSize: 12, margin: '4px 0 0' }}>
-              Facturé {monthlyPrice.toFixed(2)} € par mois · annulable à tout moment
+              {t('pricing_billed_monthly').replace('{price}', monthlyPrice.toFixed(2))}
             </p>
           )}
         </div>
 
         <p style={{ color: '#666', fontSize: 13, margin: '12px 0 20px', lineHeight: 1.5 }}>
-          Accès complet aux 5 modules, statistiques de session et mode révision Anki.
+          {t('pricing_pro_desc')}
         </p>
 
         {/* CTA */}
@@ -114,7 +86,7 @@ function PlanCard({ billing, onSubscribe, loading }) {
             marginBottom: 20,
           }}
         >
-          {loading ? 'Chargement…' : `S'abonner ${isAnnual ? 'à l\'annuel' : 'au mensuel'} →`}
+          {loading ? t('pricing_loading') : (isAnnual ? t('pricing_cta_pro_annual') : t('pricing_cta_pro_monthly'))}
         </button>
       </div>
 
@@ -134,6 +106,14 @@ function PlanCard({ billing, onSubscribe, loading }) {
 }
 
 function FreeCard() {
+  const { t } = useLang();
+
+  const FEATURES = Array.from({ length: 10 }, (_, i) => ({
+    label: t(`pricing_feat_${i + 1}`),
+    free: [true, true, false, false, false, false, false, false, true, false][i],
+    pro: true,
+  }));
+
   return (
     <div style={{
       background: '#0e0e0e', border: '1px solid #1e1e1e', borderRadius: 20,
@@ -144,17 +124,17 @@ function FreeCard() {
           <div style={{ width: 36, height: 36, borderRadius: 10, background: 'rgba(74,222,128,0.1)', border: '1px solid rgba(74,222,128,0.2)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
             <Zap size={18} color="#4ade80" />
           </div>
-          <span style={{ color: '#fff', fontSize: 20, fontWeight: 800 }}>Gratuit</span>
+          <span style={{ color: '#fff', fontSize: 20, fontWeight: 800 }}>{t('pricing_free')}</span>
         </div>
 
         <div style={{ display: 'flex', alignItems: 'baseline', gap: 4, marginBottom: 6 }}>
           <span style={{ color: '#4ade80', fontSize: 48, fontWeight: 900, letterSpacing: -2, lineHeight: 1 }}>0</span>
           <span style={{ color: '#555', fontSize: 16 }}>€</span>
-          <span style={{ color: '#555', fontSize: 14, marginLeft: 2 }}>pour toujours</span>
+          <span style={{ color: '#555', fontSize: 14, marginLeft: 2 }}>{t('pricing_free_forever')}</span>
         </div>
-        <p style={{ color: '#555', fontSize: 12, margin: '4px 0 0' }}>Sans carte bancaire · sans engagement</p>
+        <p style={{ color: '#555', fontSize: 12, margin: '4px 0 0' }}>{t('pricing_free_no_card')}</p>
         <p style={{ color: '#555', fontSize: 13, margin: '12px 0 20px', lineHeight: 1.5 }}>
-          Commence par les bases. Accès permanent aux modules Running Count et Stratégie de base.
+          {t('pricing_free_desc')}
         </p>
 
         <Link to="/training" style={{ display: "block", textDecoration: "none" }}>
@@ -165,7 +145,7 @@ function FreeCard() {
             textAlign: 'center', letterSpacing: 0.3, marginBottom: 20,
             cursor: 'pointer',
           }}>
-            Commencer gratuitement
+            {t('pricing_cta_free')}
           </div>
         </Link>
       </div>
@@ -185,7 +165,14 @@ function FreeCard() {
 }
 
 function FAQ() {
+  const { t } = useLang();
   const [open, setOpen] = useState(null);
+
+  const FAQS = Array.from({ length: 5 }, (_, i) => ({
+    q: t(`pricing_faq_${i + 1}_q`),
+    a: t(`pricing_faq_${i + 1}_a`),
+  }));
+
   return (
     <div style={{ maxWidth: 680, margin: '0 auto' }}>
       {FAQS.map((faq, i) => (
@@ -208,9 +195,16 @@ function FAQ() {
 
 export default function PricingPage() {
   const navigate   = useNavigate();
+  const { t } = useLang();
   const [billing, setBilling] = useState('annual'); // 'monthly' | 'annual'
   const [loading,  setLoading]  = useState(false);
   const [error,    setError]    = useState(null);
+
+  const FEATURES = Array.from({ length: 10 }, (_, i) => ({
+    label: t(`pricing_feat_${i + 1}`),
+    free: [true, true, false, false, false, false, false, false, true, false][i],
+    pro: true,
+  }));
 
   const PAYMENT_LINKS = {
     monthly: 'https://buy.stripe.com/3cIfZg8mRg3UgNy72penS01',
@@ -218,7 +212,9 @@ export default function PricingPage() {
   };
 
   const handleSubscribe = (plan) => {
-    localStorage.setItem('pending_plan', plan);
+    // Retour visuel immédiat : la redirection vers buy.stripe.com prend
+    // parfois une seconde, sans ce flag le bouton semblait ne rien faire.
+    setLoading(true);
     window.location.href = PAYMENT_LINKS[plan];
   };
 
@@ -229,14 +225,14 @@ export default function PricingPage() {
       {/* Hero */}
       <div style={{ textAlign: 'center', padding: '64px 24px 48px' }}>
         <div style={{ display: 'inline-block', marginBottom: 16, padding: '4px 14px', background: 'rgba(201,168,76,0.08)', border: '1px solid rgba(201,168,76,0.2)', borderRadius: 20 }}>
-          <span style={{ color: '#c9a84c', fontSize: 12, fontWeight: 700, letterSpacing: 1.5, textTransform: 'uppercase' }}>Tarifs</span>
+          <span style={{ color: '#c9a84c', fontSize: 12, fontWeight: 700, letterSpacing: 1.5, textTransform: 'uppercase' }}>{t('pricing_badge')}</span>
         </div>
         <h1 style={{ color: '#fff', fontSize: 42, fontWeight: 900, margin: '0 0 12px', letterSpacing: -1.5, lineHeight: 1.1 }}>
-          Maîtrisez le comptage de cartes.<br />
-          <span style={{ color: '#c9a84c' }}>Commencez dès aujourd'hui.</span>
+          {t('pricing_title')}<br />
+          <span style={{ color: '#c9a84c' }}>{t('pricing_title_highlight')}</span>
         </h1>
         <p style={{ color: '#666', fontSize: 16, maxWidth: 520, margin: '0 auto', lineHeight: 1.6 }}>
-          Running Count et Stratégie de base gratuits pour démarrer. Pro débloque True Count, Déviations et la Simulation Casino complète.
+          {t('pricing_subtitle')}
         </p>
 
         {/* Toggle mensuel / annuel */}
@@ -245,13 +241,13 @@ export default function PricingPage() {
             onClick={() => setBilling('monthly')}
             style={{ padding: '8px 20px', borderRadius: 9, border: 'none', background: billing === 'monthly' ? '#1e1e1e' : 'transparent', color: billing === 'monthly' ? '#fff' : '#555', fontWeight: 700, fontSize: 13, cursor: 'pointer', transition: 'all .15s' }}
           >
-            Mensuel
+            {t('pricing_billing_monthly')}
           </button>
           <button
             onClick={() => setBilling('annual')}
             style={{ padding: '8px 20px', borderRadius: 9, border: 'none', background: billing === 'annual' ? '#1e1e1e' : 'transparent', color: billing === 'annual' ? '#fff' : '#555', fontWeight: 700, fontSize: 13, cursor: 'pointer', transition: 'all .15s', display: 'flex', alignItems: 'center', gap: 6 }}
           >
-            Annuel
+            {t('pricing_billing_annual')}
             <span style={{ background: 'rgba(74,222,128,0.15)', border: '1px solid rgba(74,222,128,0.25)', borderRadius: 6, padding: '1px 6px', color: '#4ade80', fontSize: 10, fontWeight: 800 }}>-36%</span>
           </button>
         </div>
@@ -271,13 +267,13 @@ export default function PricingPage() {
 
       {/* Tableau comparatif */}
       <div style={{ maxWidth: 820, margin: '0 auto', padding: '0 24px 80px' }}>
-        <h2 style={{ color: '#444', fontSize: 11, fontWeight: 700, letterSpacing: 2, textTransform: 'uppercase', textAlign: 'center', marginBottom: 28 }}>Comparaison détaillée</h2>
+        <h2 style={{ color: '#444', fontSize: 11, fontWeight: 700, letterSpacing: 2, textTransform: 'uppercase', textAlign: 'center', marginBottom: 28 }}>{t('pricing_comparison_title')}</h2>
         <div style={{ background: '#0e0e0e', border: '1px solid #1a1a1a', borderRadius: 14, overflow: 'hidden' }}>
           {/* En-tête */}
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 80px 80px', padding: '12px 24px', borderBottom: '1px solid #1a1a1a' }}>
-            <span style={{ color: '#333', fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: 1 }}>Fonctionnalité</span>
-            <span style={{ color: '#333', fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: 1, textAlign: 'center' }}>Gratuit</span>
-            <span style={{ color: '#c9a84c', fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: 1, textAlign: 'center' }}>Pro</span>
+            <span style={{ color: '#333', fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: 1 }}>{t('pricing_feat_col')}</span>
+            <span style={{ color: '#333', fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: 1, textAlign: 'center' }}>{t('pricing_free')}</span>
+            <span style={{ color: '#c9a84c', fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: 1, textAlign: 'center' }}>{t('pricing_pro')}</span>
           </div>
           {FEATURES.map((f, i) => (
             <div key={i} style={{ display: 'grid', gridTemplateColumns: '1fr 80px 80px', padding: '11px 24px', borderBottom: i < FEATURES.length - 1 ? '1px solid #111' : 'none', background: i % 2 === 0 ? 'transparent' : 'rgba(255,255,255,0.01)' }}>
@@ -295,25 +291,25 @@ export default function PricingPage() {
 
       {/* FAQ */}
       <div style={{ maxWidth: 820, margin: '0 auto', padding: '0 24px 80px' }}>
-        <h2 style={{ color: '#444', fontSize: 11, fontWeight: 700, letterSpacing: 2, textTransform: 'uppercase', textAlign: 'center', marginBottom: 32 }}>Questions fréquentes</h2>
+        <h2 style={{ color: '#444', fontSize: 11, fontWeight: 700, letterSpacing: 2, textTransform: 'uppercase', textAlign: 'center', marginBottom: 32 }}>{t('pricing_faq_title')}</h2>
         <FAQ />
       </div>
 
       {/* Bottom CTA */}
       <div style={{ textAlign: 'center', padding: '48px 24px 80px', borderTop: '1px solid #111' }}>
         <p style={{ color: '#555', fontSize: 13, marginBottom: 20 }}>
-          Pas encore convaincu ? Commence gratuitement — pas de carte bancaire requise.
+          {t('pricing_bottom_cta_text')}
         </p>
         <div style={{ display: 'flex', gap: 12, justifyContent: 'center', flexWrap: 'wrap' }}>
           <Link to="/training" style={{ textDecoration: 'none', padding: '12px 28px', borderRadius: 12, border: '1px solid #222', color: '#888', fontWeight: 700, fontSize: 14 }}>
-            Essayer gratuitement
+            {t('pricing_try_free')}
           </Link>
           <button
             onClick={() => handleSubscribe(billing === 'annual' ? 'annual' : 'monthly')}
             disabled={loading}
             style={{ padding: '12px 28px', borderRadius: 12, background: 'linear-gradient(135deg, #c9a84c, #a8823a)', border: 'none', color: '#000', fontWeight: 800, fontSize: 14, cursor: loading ? 'not-allowed' : 'pointer' }}
           >
-            {loading ? 'Chargement…' : 'Démarrer Pro →'}
+            {loading ? t('pricing_loading') : t('pricing_start_pro')}
           </button>
         </div>
       </div>

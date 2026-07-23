@@ -1,7 +1,11 @@
 import React, { createContext, useContext, useState, useCallback } from 'react';
-import { supabase, hashPassword } from '../lib/supabase';
+import { hashPassword } from '../lib/supabase';
 
 const AuthContext = createContext(null);
+
+// Backend sécurisé qui vérifie chaque paiement auprès de Stripe avant de créer un compte.
+// À configurer sur Vercel : REACT_APP_API_URL = URL du backend déployé (ex. Railway).
+const API_BASE = process.env.REACT_APP_API_URL || '';
 
 function loadUser() {
   try {
@@ -33,88 +37,76 @@ export function isProActive(user) {
 export function AuthProvider({ children }) {
   const [user, setUser] = useState(loadUser);
 
-  // ── Register : sauvegarde localStorage + Supabase ────────────────────────
-  const register = useCallback(async (email, password, plan = 'monthly') => {
+  // ── Register : nécessite une session Stripe payée, vérifiée côté serveur ────
+  // sessionId = id de la session Stripe Checkout (transmis par la page de succès)
+  const register = useCallback(async (email, password, sessionId) => {
     const err = validatePassword(password);
     if (err) return err;
+    if (!sessionId) return 'Session de paiement introuvable. Merci de payer via la page Tarifs.';
 
-    const now    = new Date();
-    const expiry = new Date(now);
-    if (plan === 'annual') expiry.setFullYear(expiry.getFullYear() + 1);
-    else expiry.setMonth(expiry.getMonth() + 1);
+    let res, data;
+    try {
+      res = await fetch(`${API_BASE}/api/register`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email: email.toLowerCase(), password, session_id: sessionId }),
+      });
+      data = await res.json();
+    } catch {
+      return 'Impossible de contacter le serveur. Vérifie ta connexion et réessaie.';
+    }
 
-    const hashed = await hashPassword(password);
+    if (!res.ok) return data.detail || 'Erreur lors de la création du compte.';
 
+    const hashedLocal = await hashPassword(password);
     const u = {
-      email:        email.toLowerCase(),
-      password:     hashed,
-      plan,
-      subscribedAt: now.toISOString(),
-      expiryDate:   expiry.toISOString(),
+      email:        data.email,
+      password:     hashedLocal,
+      plan:         data.plan,
+      subscribedAt: new Date().toISOString(),
+      expiryDate:   data.expiry_date,
+      token:        data.token,
     };
-
-    // Sauvegarde Supabase (persistance inter-appareils / après vidage navigateur)
-    const { error } = await supabase.from('users').upsert({
-      email:       u.email,
-      password:    hashed,
-      plan:        plan,
-      expiry_date: expiry.toISOString(),
-    }, { onConflict: 'email' });
-
-    if (error) console.error('Supabase register error:', error.message);
-
     saveLocal(u);
-    localStorage.removeItem('pending_plan');
     setUser(u);
     return null;
   }, []);
 
-  // ── Login : localStorage d'abord, sinon restauration depuis Supabase ─────
+  // ── Login : vérifie auprès du serveur, avec repli hors ligne sur le cache local ──
   const login = useCallback(async (email, password) => {
-    const hashed = await hashPassword(password);
     const emailLower = email.toLowerCase();
+    const hashedLocal = await hashPassword(password);
+    const cached = loadUser();
 
-    // 1. Chercher en local
-    let stored = loadUser();
+    try {
+      const res = await fetch(`${API_BASE}/api/login`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email: emailLower, password }),
+      });
+      const data = await res.json();
+      if (!res.ok) return data.detail || 'Email ou mot de passe incorrect.';
 
-    // 2. Si rien en local (navigateur vidé) → chercher dans Supabase
-    if (!stored || stored.email !== emailLower) {
-      const { data, error } = await supabase
-        .from('users')
-        .select('*')
-        .eq('email', emailLower)
-        .single();
-
-      console.log('Supabase login result:', { data, error });
-
-      if (error) return `Erreur Supabase: ${error.message}`;
-      if (!data) return 'Aucun compte trouvé pour cet email.';
-
-      if (data.password !== hashed) return 'Mot de passe incorrect.';
-
-      // Reconstruire la session locale depuis Supabase
-      stored = {
-        email:        data.email,
-        password:     data.password,
-        plan:         data.plan,
-        subscribedAt: data.created_at,
-        expiryDate:   data.expiry_date,
+      const u = {
+        email:      data.email,
+        password:   hashedLocal,
+        plan:       data.plan,
+        expiryDate: data.expiry_date,
+        token:      data.token,
       };
-
-      saveLocal(stored);
-      setUser(stored);
-
-      if (!isProActive(stored)) return 'Ton abonnement a expiré. Renouvelle-le sur la page Tarifs.';
+      saveLocal(u);
+      setUser(u);
+      if (!isProActive(u)) return 'Ton abonnement a expiré. Renouvelle-le sur la page Tarifs.';
       return null;
+    } catch {
+      // Hors ligne : on retombe sur le compte mis en cache localement si les identifiants correspondent
+      if (cached && cached.email === emailLower && cached.password === hashedLocal) {
+        setUser(cached);
+        if (!isProActive(cached)) return 'Ton abonnement a expiré. Renouvelle-le sur la page Tarifs.';
+        return null;
+      }
+      return 'Impossible de se connecter (hors ligne et aucun compte local).';
     }
-
-    // 3. Compte trouvé en local — vérifier mot de passe
-    if (stored.password !== hashed) return 'Mot de passe incorrect.';
-    if (!isProActive(stored)) return 'Ton abonnement a expiré. Renouvelle-le sur la page Tarifs.';
-
-    saveLocal(stored);
-    setUser(stored);
-    return null;
   }, []);
 
   const logout = useCallback(() => {

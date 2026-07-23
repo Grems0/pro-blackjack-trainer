@@ -5,7 +5,7 @@ export const defaultPlayerSettings = {
   selectedTemplate: null,
   availableFunds: 10000,
   estimateRoundsPerHour: true,
-  roundsPerHour: 154,
+  roundsPerHour: 94, // estimateRoundsPerHour('moyenne', 2) = round(120/1.28)
   numberOfPlayers: 2,
   tableSpeed: 'moyenne',
   unitQuantity: 10,
@@ -42,7 +42,6 @@ export const defaultTableRules = {
 };
 
 export const additionalSettings = {
-  loseAllVsBJ: true,
   countingSystem: 'hi-lo',
   trueCountMethod: 'truncate',
   deckEstimationPrecision: 'half',
@@ -200,21 +199,37 @@ export const basicStrategySoftENHCH17 = {
   20: { 2:'S',  3:'S',  4:'S',  5:'S',  6:'S',  7:'S', 8:'S', 9:'S', 10:'S', A:'S' },
 };
 
-// Paires ENHC (no DAS par défaut en Europe)
-// P=Séparer, H=Tirer, S=Rester, D=Doubler
-// Note: certaines entrées notées 'P/H' = Séparer si DAS autorisé, sinon Tirer
-export const basicStrategyPairsENHC = {
-  '2,2':  { 2:'P',   3:'P',  4:'P', 5:'P', 6:'P', 7:'P', 8:'H', 9:'H', 10:'H', A:'H' },
-  '3,3':  { 2:'P',   3:'P',  4:'P', 5:'P', 6:'P', 7:'P', 8:'H', 9:'H', 10:'H', A:'H' },
-  '4,4':  { 2:'H',   3:'H',  4:'H', 5:'P', 6:'P', 7:'H', 8:'H', 9:'H', 10:'H', A:'H' },
-  '5,5':  { 2:'D',   3:'D',  4:'D', 5:'D', 6:'D', 7:'D', 8:'D', 9:'D', 10:'H', A:'H' }, // traiter comme Hard 10
-  '6,6':  { 2:'P',   3:'P',  4:'P', 5:'P', 6:'P', 7:'H', 8:'H', 9:'H', 10:'H', A:'H' },
-  '7,7':  { 2:'P',   3:'P',  4:'P', 5:'P', 6:'P', 7:'P', 8:'H', 9:'H', 10:'H', A:'H' },
-  '8,8':  { 2:'P',   3:'P',  4:'P', 5:'P', 6:'P', 7:'P', 8:'P', 9:'P', 10:'P', A:'H' }, // ENHC: H vs A uniquement
-  '9,9':  { 2:'P',   3:'P',  4:'P', 5:'P', 6:'P', 7:'S', 8:'P', 9:'P', 10:'S', A:'S' },
-  '10,10':{ 2:'S',   3:'S',  4:'S', 5:'S', 6:'S', 7:'S', 8:'S', 9:'S', 10:'S', A:'S' },
-  'A,A':  { 2:'P',   3:'P',  4:'P', 5:'P', 6:'P', 7:'P', 8:'P', 9:'P', 10:'P', A:'P' },
+// Paires ENHC avec DAS (doubleAfterSplit autorisé)
+export const basicStrategyPairsENHCDAS = {
+  '2,2':  { 2:'P',  3:'P', 4:'P', 5:'P', 6:'P', 7:'P', 8:'H', 9:'H', 10:'H', A:'H' },
+  '3,3':  { 2:'P',  3:'P', 4:'P', 5:'P', 6:'P', 7:'P', 8:'H', 9:'H', 10:'H', A:'H' },
+  '4,4':  { 2:'H',  3:'H', 4:'H', 5:'P', 6:'P', 7:'H', 8:'H', 9:'H', 10:'H', A:'H' }, // P vs 5-6 avec DAS
+  '5,5':  { 2:'D',  3:'D', 4:'D', 5:'D', 6:'D', 7:'D', 8:'D', 9:'D', 10:'H', A:'H' },
+  '6,6':  { 2:'P',  3:'P', 4:'P', 5:'P', 6:'P', 7:'H', 8:'H', 9:'H', 10:'H', A:'H' }, // P vs 2-6 avec DAS
+  '7,7':  { 2:'P',  3:'P', 4:'P', 5:'P', 6:'P', 7:'P', 8:'H', 9:'H', 10:'H', A:'H' },
+  '8,8':  { 2:'P',  3:'P', 4:'P', 5:'P', 6:'P', 7:'P', 8:'P', 9:'P', 10:'P', A:'H' }, // ENHC: H vs A
+  '9,9':  { 2:'P',  3:'P', 4:'P', 5:'P', 6:'P', 7:'S', 8:'P', 9:'P', 10:'S', A:'S' },
+  '10,10':{ 2:'S',  3:'S', 4:'S', 5:'S', 6:'S', 7:'S', 8:'S', 9:'S', 10:'S', A:'S' },
+  'A,A':  { 2:'P',  3:'P', 4:'P', 5:'P', 6:'P', 7:'P', 8:'P', 9:'P', 10:'P', A:'P' },
 };
+
+// Paires ENHC sans DAS (no doubleAfterSplit — défaut en Europe)
+// Différences vs DAS : 2,2/3,3 vs 2 = H, 4,4 vs 5/6 = H, 6,6 vs 2 = H
+export const basicStrategyPairsENHCNoDAS = {
+  '2,2':  { 2:'H',  3:'P', 4:'P', 5:'P', 6:'P', 7:'P', 8:'H', 9:'H', 10:'H', A:'H' }, // H vs 2 sans DAS
+  '3,3':  { 2:'H',  3:'P', 4:'P', 5:'P', 6:'P', 7:'P', 8:'H', 9:'H', 10:'H', A:'H' }, // H vs 2 sans DAS
+  '4,4':  { 2:'H',  3:'H', 4:'H', 5:'H', 6:'H', 7:'H', 8:'H', 9:'H', 10:'H', A:'H' }, // pas séparer sans DAS
+  '5,5':  { 2:'D',  3:'D', 4:'D', 5:'D', 6:'D', 7:'D', 8:'D', 9:'D', 10:'H', A:'H' },
+  '6,6':  { 2:'H',  3:'P', 4:'P', 5:'P', 6:'P', 7:'H', 8:'H', 9:'H', 10:'H', A:'H' }, // H vs 2 sans DAS
+  '7,7':  { 2:'P',  3:'P', 4:'P', 5:'P', 6:'P', 7:'P', 8:'H', 9:'H', 10:'H', A:'H' },
+  '8,8':  { 2:'P',  3:'P', 4:'P', 5:'P', 6:'P', 7:'P', 8:'P', 9:'P', 10:'P', A:'H' }, // ENHC: H vs A
+  '9,9':  { 2:'P',  3:'P', 4:'P', 5:'P', 6:'P', 7:'S', 8:'P', 9:'P', 10:'S', A:'S' },
+  '10,10':{ 2:'S',  3:'S', 4:'S', 5:'S', 6:'S', 7:'S', 8:'S', 9:'S', 10:'S', A:'S' },
+  'A,A':  { 2:'P',  3:'P', 4:'P', 5:'P', 6:'P', 7:'P', 8:'P', 9:'P', 10:'P', A:'P' },
+};
+
+// Alias — no-DAS par défaut (defaultTableRules.doubleAfterSplit = false)
+export const basicStrategyPairsENHC = basicStrategyPairsENHCNoDAS;
 
 // Aliases pour compatibilité avec les composants existants
 export const basicStrategyHard = basicStrategyHardENHCS17;
@@ -228,11 +243,11 @@ export const deviationsS17 = [
   { index: 2,  playerHand: '16',         dealerCard: '10', trueCount: 0,  action: 'Rester (au lieu de Tirer/Abandonner)' },
   { index: 3,  playerHand: '15',         dealerCard: '10', trueCount: 4,  action: 'Rester (au lieu de Tirer/Abandonner)' },
   { index: 4,  playerHand: '15',         dealerCard: 'A',  trueCount: 1,  action: 'Rester (au lieu de Tirer)' },
-  { index: 5,  playerHand: '16',         dealerCard: 'A',  trueCount: 0,  action: 'Rester (au lieu de Tirer)' },
+  { index: 5,  playerHand: '16',         dealerCard: 'A',  trueCount: 4,  action: 'Rester (au lieu de Tirer)' },
   { index: 6,  playerHand: '16',         dealerCard: '9',  trueCount: 4,  action: 'Rester (au lieu de Tirer)' },
   { index: 7,  playerHand: '10',         dealerCard: '10', trueCount: 4,  action: 'Doubler (au lieu de Tirer)' },
   { index: 8,  playerHand: '10',         dealerCard: 'A',  trueCount: 4,  action: 'Doubler (au lieu de Tirer)' },
-  { index: 9,  playerHand: '11',         dealerCard: 'A',  trueCount: 1,  action: 'Doubler (au lieu de Tirer) — ENHC S17' },
+  { index: 9,  playerHand: '11',         dealerCard: 'A',  trueCount: 3,  action: 'Doubler (au lieu de Tirer) — ENHC S17' },
   { index: 10, playerHand: '12',         dealerCard: '2',  trueCount: 3,  action: 'Rester (au lieu de Tirer)' },
   { index: 11, playerHand: '12',         dealerCard: '3',  trueCount: 2,  action: 'Rester (au lieu de Tirer)' },
   { index: 12, playerHand: '12',         dealerCard: '4',  trueCount: 0,  action: 'Tirer (au lieu de Rester)' },
@@ -250,7 +265,7 @@ export const deviationsH17 = [
   { index: 2,  playerHand: '16',         dealerCard: '10', trueCount: 0,  action: 'Rester (au lieu de Tirer/Abandonner)' },
   { index: 3,  playerHand: '15',         dealerCard: '10', trueCount: 4,  action: 'Rester (au lieu de Tirer/Abandonner)' },
   { index: 4,  playerHand: '15',         dealerCard: 'A',  trueCount: 2,  action: 'Rester (au lieu de Tirer) — TC ≥ +2 en H17' },
-  { index: 5,  playerHand: '16',         dealerCard: 'A',  trueCount: 0,  action: 'Rester (au lieu de Tirer)' },
+  { index: 5,  playerHand: '16',         dealerCard: 'A',  trueCount: 3,  action: 'Rester (au lieu de Tirer)' },
   { index: 6,  playerHand: '16',         dealerCard: '9',  trueCount: 4,  action: 'Rester (au lieu de Tirer)' },
   { index: 7,  playerHand: '10',         dealerCard: '10', trueCount: 4,  action: 'Doubler (au lieu de Tirer)' },
   { index: 8,  playerHand: '10',         dealerCard: 'A',  trueCount: 3,  action: 'Doubler (au lieu de Tirer) — TC ≥ +3 en H17' },

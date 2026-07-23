@@ -1,10 +1,12 @@
 import React, { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
+import { useLang } from '../contexts/LanguageContext';
 import { LogIn, Eye, EyeOff } from 'lucide-react';
 
 export default function LoginPage() {
   const { login } = useAuth();
+  const { t } = useLang();
   const navigate = useNavigate();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -31,13 +33,13 @@ export default function LoginPage() {
         <div style={{ background: '#111', border: '1px solid #1e1e1e', borderRadius: 20, padding: '32px 28px' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 24 }}>
             <LogIn size={20} color="#c9a84c" />
-            <h1 style={{ color: '#fff', fontSize: 20, fontWeight: 900, margin: 0 }}>Connexion Pro</h1>
+            <h1 style={{ color: '#fff', fontSize: 20, fontWeight: 900, margin: 0 }}>{t('login_title')}</h1>
           </div>
 
           <form onSubmit={handleSubmit}>
             <div style={{ marginBottom: 16 }}>
               <label style={{ color: '#666', fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: 1, display: 'block', marginBottom: 8 }}>
-                Adresse email
+                {t('login_email')}
               </label>
               <input
                 type="email"
@@ -55,7 +57,7 @@ export default function LoginPage() {
 
             <div style={{ marginBottom: 20 }}>
               <label style={{ color: '#666', fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: 1, display: 'block', marginBottom: 8 }}>
-                Mot de passe
+                {t('login_password')}
               </label>
               <div style={{ position: 'relative' }}>
                 <input
@@ -89,14 +91,14 @@ export default function LoginPage() {
               border: 'none', color: '#000', fontWeight: 800, fontSize: 15,
               cursor: 'pointer', marginBottom: 16,
             }}>
-              Se connecter →
+              {t('login_submit')}
             </button>
           </form>
 
           <p style={{ color: '#444', fontSize: 12, textAlign: 'center', margin: 0 }}>
-            Pas encore de compte ?{' '}
+            {t('login_no_account')}{' '}
             <Link to="/pricing" style={{ color: '#c9a84c', textDecoration: 'none', fontWeight: 700 }}>
-              S'abonner Pro →
+              {t('login_signup_link')}
             </Link>
           </p>
         </div>

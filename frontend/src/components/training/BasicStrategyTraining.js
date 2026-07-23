@@ -1,11 +1,12 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { ArrowLeft, RotateCcw, BookOpen, X, RefreshCw, Lock } from 'lucide-react';
-import { useProAccess } from '../../hooks/useProAccess';
+import { useDemoMode } from '../../hooks/useDemoMode';
 import { useLang } from '../../contexts/LanguageContext';
 import SessionResults from './SessionResults';
 import { useGame } from '../../contexts/GameContext';
 import PlayingCard from '../game/PlayingCard';
+import CasinoTable from '../game/CasinoTable';
 import StrategyCharts from '../charts/StrategyCharts';
 import {
   generateDeck,
@@ -14,7 +15,8 @@ import {
   basicStrategyHardENHCH17,
   basicStrategySoftENHCS17,
   basicStrategySoftENHCH17,
-  basicStrategyPairsENHC,
+  basicStrategyPairsENHCDAS,
+  basicStrategyPairsENHCNoDAS,
   getCardValue,
   calculateHandTotal,
   isSoftHand
@@ -41,9 +43,10 @@ function weightedRandom(items) {
 
 export default function BasicStrategyTraining() {
   const navigate = useNavigate();
-  const isPro = useProAccess();
+  const { isDemo, isPro, demoHandsPlayed, demoLeft, demoExpired, incrementDemoHand, DEMO_LIMIT } = useDemoMode();
   const { t } = useLang();
-  const [showProMsg, setShowProMsg] = useState(false);
+  const [showProMsg,   setShowProMsg]   = useState(false);
+  const [showDemoChart, setShowDemoChart] = useState(false);
   const { tableRules, currentModule } = useGame();
 
   const savedConfig = (() => { try { return JSON.parse(localStorage.getItem('trainingModuleConfig') || '{}'); } catch { return {}; } })();
@@ -142,7 +145,7 @@ export default function BasicStrategyTraining() {
 
     const hardTable  = isS17 ? basicStrategyHardENHCS17 : basicStrategyHardENHCH17;
     const softTable  = isS17 ? basicStrategySoftENHCS17 : basicStrategySoftENHCH17;
-    const pairsTable = basicStrategyPairsENHC;
+    const pairsTable = tableRules.doubleAfterSplit ? basicStrategyPairsENHCDAS : basicStrategyPairsENHCNoDAS;
 
     const playerTotal = calculateHandTotal(playerCards);
     const dealerValue = dealerCard.value === 'A' ? 'A' :
@@ -164,8 +167,10 @@ export default function BasicStrategyTraining() {
 
   // ─── Handle answer ────────────────────────────────────────────────────────
   const handleAction = (action) => {
+    if (demoExpired) return;
     const correct = getCorrectAction();
     setLastCorrectAction(correct);
+    if (isDemo) incrementDemoHand();
 
     const normalizedCorrect = correct?.replace('h','').replace('s','')[0];
     const isCorrect = action === normalizedCorrect ||
@@ -218,7 +223,7 @@ export default function BasicStrategyTraining() {
       saveReviewItems(updated);
 
       setMistakes(prev => [...prev, { handDesc, dealerDisplay, chosenAction: action, correctAction: correct }]);
-      setFeedback({ type: 'incorrect', chosenAction: action, correctAction: correct });
+      setFeedback({ type: 'incorrect', chosenAction: action, correctAction: isDemo ? null : correct });
       setStats(prev => ({ ...prev, incorrect: prev.incorrect + 1 }));
     }
   };
@@ -293,6 +298,66 @@ export default function BasicStrategyTraining() {
         </div>
       )}
 
+      {/* Paywall demo — après 10 mains */}
+      {demoExpired && (
+        <div style={{ position: 'fixed', inset: 0, zIndex: 300, display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'rgba(0,0,0,0.85)', backdropFilter: 'blur(6px)' }}>
+          <div style={{ background: '#111', border: '1px solid #2a2a2a', borderRadius: 20, padding: '36px 28px', maxWidth: 380, width: '90%', textAlign: 'center' }}>
+            <div style={{ fontSize: 40, marginBottom: 16 }}>🃏</div>
+            <h2 style={{ color: '#fff', fontSize: 20, fontWeight: 900, margin: '0 0 8px' }}>{t('bs_demo_paywall_title').replace('{n}', DEMO_LIMIT)}</h2>
+            <p style={{ color: '#666', fontSize: 13, lineHeight: 1.7, margin: '0 0 8px' }}>
+              {t('bs_demo_paywall_desc')}
+            </p>
+            <p style={{ color: '#c9a84c', fontWeight: 700, fontSize: 14, margin: '0 0 24px' }}>
+              {t('bs_demo_paywall_cta')}
+            </p>
+            <button
+              onClick={() => navigate('/pricing')}
+              style={{ width: '100%', padding: '14px', borderRadius: 12, background: 'linear-gradient(135deg, #c9a84c, #a8823a)', border: 'none', color: '#000', fontWeight: 900, fontSize: 15, cursor: 'pointer', marginBottom: 10 }}
+            >
+              {t('bs_demo_see_offers')}
+            </button>
+            <button
+              onClick={() => navigate('/training')}
+              style={{ width: '100%', padding: '10px', borderRadius: 12, background: 'transparent', border: '1px solid #2a2a2a', color: '#555', fontWeight: 600, fontSize: 13, cursor: 'pointer' }}
+            >
+              {t('bs_demo_back_home')}
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* Tableaux floutés en mode demo */}
+      {showDemoChart && (
+        <div className="fixed inset-0 z-50 flex items-start justify-center bg-black/80 backdrop-blur-sm overflow-y-auto py-6 px-4">
+          <div className="bg-[#1a1a1d] rounded-2xl border border-gray-700 w-full max-w-lg relative">
+            <button onClick={() => setShowDemoChart(false)} className="absolute top-3 right-3 p-1.5 rounded-lg bg-white/10 hover:bg-white/20 transition-colors z-10">
+              <X className="w-5 h-5 text-white" />
+            </button>
+            <div className="p-5 relative">
+              {/* Tableau flou */}
+              <div style={{ filter: 'blur(6px)', pointerEvents: 'none', userSelect: 'none' }}>
+                <StrategyCharts defaultVariant={ruleVariant} locked />
+              </div>
+              {/* Overlay cadenas */}
+              <div style={{ position: 'absolute', inset: 0, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 14, background: 'rgba(0,0,0,0.55)', borderRadius: 16 }}>
+                <div style={{ width: 56, height: 56, borderRadius: '50%', background: 'rgba(201,168,76,0.15)', border: '1px solid rgba(201,168,76,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                  <Lock size={24} color="#c9a84c" />
+                </div>
+                <p style={{ color: '#fff', fontWeight: 800, fontSize: 15, textAlign: 'center', margin: 0 }}>{t('bs_demo_charts_locked')}</p>
+                <p style={{ color: '#888', fontSize: 12, textAlign: 'center', margin: 0, maxWidth: 220 }}>{t('bs_demo_charts_desc')}</p>
+                <button
+                  onClick={() => navigate('/pricing')}
+                  style={{ padding: '10px 24px', borderRadius: 10, background: 'linear-gradient(135deg, #c9a84c, #a8823a)', border: 'none', color: '#000', fontWeight: 800, fontSize: 13, cursor: 'pointer' }}
+                >
+                  {t('bs_demo_charts_btn')}
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Tableaux pro (membres) */}
       {showChart && (
         <div className="fixed inset-0 z-50 flex items-start justify-center bg-black/80 backdrop-blur-sm overflow-y-auto py-6 px-4">
           <div className="bg-[#1a1a1d] rounded-2xl border border-gray-700 w-full max-w-lg relative">
@@ -340,7 +405,23 @@ export default function BasicStrategyTraining() {
                 <span className="text-amber-300 text-sm font-bold">{t('bs_review_mode')} {reviewCount > 0 ? `(${reviewCount})` : '✓'}</span>
               </button>
             )}
-            <button onClick={() => isPro ? setShowChart(true) : setShowProMsg(true)} className="flex items-center gap-2 px-3 py-2 rounded-lg bg-amber-500/20 hover:bg-amber-500/30 border border-amber-500/40 transition-colors">
+            {/* Compteur demo */}
+            {isDemo && !demoExpired && (
+              <div style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '6px 12px', borderRadius: 8, background: 'rgba(201,168,76,0.12)', border: '1px solid rgba(201,168,76,0.3)' }}>
+                <span style={{ color: '#c9a84c', fontSize: 12, fontWeight: 700 }}>
+                  {t('bs_demo_hand')} {demoHandsPlayed}/{DEMO_LIMIT}
+                </span>
+                <span style={{ color: '#555', fontSize: 11 }}>·</span>
+                <button onClick={() => navigate('/pricing')} style={{ color: '#c9a84c', fontSize: 11, fontWeight: 600, background: 'none', border: 'none', cursor: 'pointer', textDecoration: 'underline', padding: 0 }}>
+                  {t('bs_demo_signup')}
+                </button>
+              </div>
+            )}
+
+            <button
+              onClick={() => isPro ? setShowChart(true) : setShowDemoChart(true)}
+              className="flex items-center gap-2 px-3 py-2 rounded-lg bg-amber-500/20 hover:bg-amber-500/30 border border-amber-500/40 transition-colors"
+            >
               {isPro ? <BookOpen className="w-4 h-4 text-amber-400" /> : <Lock className="w-4 h-4 text-amber-400" />}
               <span className="text-amber-300 text-sm font-semibold hidden sm:inline">{t('bs_table_btn')}</span>
             </button>
@@ -436,11 +517,15 @@ export default function BasicStrategyTraining() {
         </div>
 
         {/* Table de jeu */}
-        <div className="bg-gradient-to-b from-green-800/50 to-green-900/50 rounded-2xl p-8 border border-amber-700/30">
-          <div className="text-center mb-8">
+        <CasinoTable
+          inscription="Blackjack pays 3:2"
+          subline={isS17 ? 'Dealer must stand on 17' : 'Dealer hits soft 17'}
+          glow={feedback?.type === 'correct'}
+        >
+          <div className="text-center mb-8 mt-6">
             <span className="text-gray-300 text-sm">{t('bs_dealer_card')}</span>
             <div className="flex justify-center mt-3">
-              {dealerCard && <PlayingCard card={dealerCard} size="lg" />}
+              {dealerCard && <PlayingCard key={`d-${dealerCard.value}${dealerCard.suit}`} card={dealerCard} size="lg" dealt />}
             </div>
           </div>
 
@@ -450,7 +535,7 @@ export default function BasicStrategyTraining() {
             <span className="text-gray-300 text-sm">{t('bs_your_hand')}</span>
             <div className="flex justify-center gap-3 mt-3">
               {playerCards.map((card, idx) => (
-                <PlayingCard key={idx} card={card} size="lg" />
+                <PlayingCard key={`${card.value}${card.suit}${idx}`} card={card} size="lg" dealt dealIndex={idx + 1} />
               ))}
             </div>
             <div className="mt-4 flex items-center justify-center gap-4">
@@ -472,22 +557,37 @@ export default function BasicStrategyTraining() {
               ) : (
                 <div className="space-y-3">
                   <p className="text-red-400 font-bold text-center mb-3">{t('bs_wrong_decision')}</p>
-                  <div className="flex flex-col sm:flex-row gap-2">
-                    <div className="flex items-center gap-2 flex-1 bg-red-500/10 border border-red-500/20 rounded-lg px-4 py-2">
-                      <span className="text-red-400 text-lg">✗</span>
-                      <div>
-                        <p className="text-xs text-gray-500 uppercase tracking-wide">{t('bs_your_choice')}</p>
-                        <p className="text-red-300 font-bold">{getActionLabel(feedback.chosenAction)}</p>
+                  {feedback.correctAction ? (
+                    <div className="flex flex-col sm:flex-row gap-2">
+                      <div className="flex items-center gap-2 flex-1 bg-red-500/10 border border-red-500/20 rounded-lg px-4 py-2">
+                        <span className="text-red-400 text-lg">✗</span>
+                        <div>
+                          <p className="text-xs text-gray-500 uppercase tracking-wide">{t('bs_your_choice')}</p>
+                          <p className="text-red-300 font-bold">{getActionLabel(feedback.chosenAction)}</p>
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-2 flex-1 bg-emerald-500/10 border border-emerald-500/20 rounded-lg px-4 py-2">
+                        <span className="text-emerald-400 text-lg">✓</span>
+                        <div>
+                          <p className="text-xs text-gray-500 uppercase tracking-wide">{t('bs_good_decision')}</p>
+                          <p className="text-emerald-300 font-bold">{getActionLabel(feedback.correctAction)}</p>
+                        </div>
                       </div>
                     </div>
-                    <div className="flex items-center gap-2 flex-1 bg-emerald-500/10 border border-emerald-500/20 rounded-lg px-4 py-2">
-                      <span className="text-emerald-400 text-lg">✓</span>
-                      <div>
-                        <p className="text-xs text-gray-500 uppercase tracking-wide">{t('bs_good_decision')}</p>
-                        <p className="text-emerald-300 font-bold">{getActionLabel(feedback.correctAction)}</p>
-                      </div>
+                  ) : (
+                    /* Mode demo : pas de correction affichée */
+                    <div style={{ textAlign: 'center', padding: '10px 0' }}>
+                      <p style={{ color: '#888', fontSize: 13, margin: '0 0 8px' }}>
+                        {t('bs_demo_wrong_msg')}
+                      </p>
+                      <button
+                        onClick={() => navigate('/pricing')}
+                        style={{ padding: '8px 18px', borderRadius: 8, background: 'linear-gradient(135deg, #c9a84c, #a8823a)', border: 'none', color: '#000', fontWeight: 800, fontSize: 12, cursor: 'pointer' }}
+                      >
+                        {t('bs_demo_wrong_btn')}
+                      </button>
                     </div>
-                  </div>
+                  )}
                 </div>
               )}
             </div>
@@ -514,7 +614,7 @@ export default function BasicStrategyTraining() {
               </button>
             </div>
           )}
-        </div>
+        </CasinoTable>
 
         {/* Référence rapide */}
         <div className="mt-6 bg-black/30 backdrop-blur-sm rounded-lg p-4">

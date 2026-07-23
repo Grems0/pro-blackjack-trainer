@@ -1,5 +1,6 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef, useEffect, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useGame } from '../../contexts/GameContext';
 import { ArrowLeft, BookOpen, X, Lock } from 'lucide-react';
 import { useProAccess } from '../../hooks/useProAccess';
 import StrategyCharts from '../charts/StrategyCharts';
@@ -8,7 +9,8 @@ import {
   generateDeck, shuffleDeck, getHiLoValue, calculateHandTotal, isSoftHand,
   basicStrategyHardENHCS17, basicStrategyHardENHCH17,
   basicStrategySoftENHCS17, basicStrategySoftENHCH17,
-  basicStrategyPairsENHC,
+  basicStrategyPairsENHCDAS,
+  basicStrategyPairsENHCNoDAS,
   deviationsS17, deviationsH17,
   surrenderDeviationsS17, surrenderDeviationsH17,
 } from '../../data/mockData';
@@ -17,7 +19,7 @@ import {
 const NUM_DECKS = 6;
 const TOTAL_CARDS = NUM_DECKS * 52;
 const CHIPS = [5, 10, 25, 50, 100];
-const DEFAULT_BETSPREAD = { '-2': 5, '-1': 5, '0': 5, '1': 10, '2': 20, '3': 30, '4': 50, '5': 50, '6': 50 };
+const DEFAULT_BETSPREAD = { '-3': 0, '-2': 0, '-1': 5, '0': 5, '1': 10, '2': 20, '3': 30, '4': 50, '5': 50, '6': 50, '7': 50 };
 const DEFAULT_CFG = { isS17: true, das: true, rsaAllowed: false, surrenderAllowed: true, useDeviations: true, numBots: 1, showRC: false, showTC: false, bankroll: 500, penetrationDecks: 4.5 };
 const ACTION_LABELS = { H: 'Tirer', S: 'Rester', D: 'Doubler', P: 'Séparer', R: 'Abandonner' };
 
@@ -72,13 +74,14 @@ function getOptimalAction(hand, dealerUpCard, tc, cfg, isFirstAction) {
       if (normDK(d.dealerCard) !== dk) continue;
       if (total !== parseInt(d.playerHand)) continue;
       const down = d.action.includes('au lieu de Rester');
-      if (down ? tc <= d.trueCount : tc >= d.trueCount) return actionFromText(d.action);
+      if (down ? tc < d.trueCount : tc >= d.trueCount) return actionFromText(d.action);
     }
   }
   if (isPair && isFirstAction) {
     const v = getV(hand[0].value);
     const key = v === 'A' ? 'A,A' : `${v},${v}`;
-    const a = basicStrategyPairsENHC[key]?.[dk];
+    const pairsT = cfg.das ? basicStrategyPairsENHCDAS : basicStrategyPairsENHCNoDAS;
+    const a = pairsT[key]?.[dk];
     if (a) return a;
   }
   if (soft && total >= 13 && total <= 20) {
@@ -91,7 +94,7 @@ function getOptimalAction(hand, dealerUpCard, tc, cfg, isFirstAction) {
   return raw;
 }
 function getOptimalBet(tc, bs) {
-  return bs[Math.max(-2, Math.min(6, tc)).toString()] || 5;
+  return bs[Math.max(-3, Math.min(7, tc)).toString()] || 5;
 }
 // Returns the deal-sequence step index for a card (used for slide-in animation)
 // target: 'bot'|'player'|'dealer', handIdx: 0/1, cardIdx: 0/1
@@ -170,18 +173,31 @@ function ProLockOverlay({ navigate, label }) {
 function ConfigScreen({ onStart }) {
   const navigate = useNavigate();
   const isPro = useProAccess();
-  const [cfg, setCfg] = useState({ ...DEFAULT_CFG });
-  const [bs, setBs] = useState({ ...DEFAULT_BETSPREAD });
+  const { betSpread: contextBetSpread, tableRules } = useGame();
+
+  // Convertit le format GameContext [{index, value}] → {'0': x, '1': x, ...}
+  const contextBsDict = useMemo(() =>
+    Object.fromEntries(contextBetSpread.map(e => [String(e.index), Math.max(0, e.value)])),
+    [contextBetSpread]
+  );
+
+  const [cfg, setCfg] = useState({
+    ...DEFAULT_CFG,
+    isS17: !tableRules.dealerHitsSoft17,
+    das: tableRules.doubleAfterSplit,
+    surrenderAllowed: tableRules.surrender !== 'none' && tableRules.surrender !== 'no',
+  });
+  const [bs, setBs] = useState({ ...DEFAULT_BETSPREAD, ...contextBsDict });
   const [savedModels, setSavedModels] = useState(() => { try { return JSON.parse(localStorage.getItem('bj_betspreads') || '[]'); } catch { return []; } });
   const [saveInput, setSaveInput] = useState('');
   const [saveOpen, setSaveOpen] = useState(false);
   const toggle = k => setCfg(p => ({ ...p, [k]: !p[k] }));
-  const TC_RANGE = ['-2', '-1', '0', '1', '2', '3', '4', '5', '6'];
+  const TC_RANGE = ['-3', '-2', '-1', '0', '1', '2', '3', '4', '5', '6', '7'];
   const PEN_DECKS = [4, 4.5, 5, 5.5];
   const BANKROLL_PRESETS = [200, 500, 1000, 2000, 5000];
 
   const loadModel = (m) => {
-    setBs({ ...DEFAULT_BETSPREAD, ...m.spread });
+    setBs({ ...DEFAULT_BETSPREAD, ...contextBsDict, ...m.spread });
     if (m.cfg) setCfg({ ...DEFAULT_CFG, ...m.cfg });
   };
 

@@ -1,23 +1,52 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { CheckCircle, Eye, EyeOff, Crown } from 'lucide-react';
+import { CheckCircle, Eye, EyeOff, Crown, XCircle } from 'lucide-react';
 import { useAuth, validatePassword } from '../contexts/AuthContext';
 
+const API_BASE = process.env.REACT_APP_API_URL || '';
 const PLAN_LABELS = { monthly: 'mensuel', annual: 'annuel' };
 const PLAN_DURATIONS = { monthly: '30 jours', annual: '1 an' };
 
 export default function PaymentSuccessPage() {
   const { register } = useAuth();
   const navigate = useNavigate();
-  const plan = localStorage.getItem('pending_plan') || 'monthly';
 
-  const [email, setEmail] = useState('');
+  // La session Stripe est la SEULE preuve de paiement acceptée — jamais une valeur
+  // de localStorage, qui peut être falsifiée par n'importe qui depuis la console.
+  const sessionId = new URLSearchParams(window.location.search).get('session_id');
+
+  const [checking, setChecking] = useState(true);
+  const [sessionError, setSessionError] = useState(null);
+  const [verifiedEmail, setVerifiedEmail] = useState('');
+  const [plan, setPlan] = useState('monthly');
+
   const [password, setPassword] = useState('');
   const [confirm, setConfirm] = useState('');
   const [showPw, setShowPw] = useState(false);
   const [error, setError] = useState(null);
   const [done, setDone] = useState(false);
   const [countdown, setCountdown] = useState(30);
+
+  // Vérification côté serveur du paiement Stripe avant d'afficher quoi que ce soit
+  useEffect(() => {
+    if (!sessionId) {
+      setSessionError("Aucun paiement détecté. Merci de t'abonner depuis la page Tarifs.");
+      setChecking(false);
+      return;
+    }
+    fetch(`${API_BASE}/api/verify-session?session_id=${encodeURIComponent(sessionId)}`)
+      .then(async (res) => {
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.detail || 'Paiement non confirmé.');
+        setVerifiedEmail(data.email);
+        setPlan(data.plan);
+        setChecking(false);
+      })
+      .catch((e) => {
+        setSessionError(e.message || 'Impossible de vérifier ton paiement.');
+        setChecking(false);
+      });
+  }, [sessionId]);
 
   // Countdown après création de compte
   useEffect(() => {
@@ -38,7 +67,7 @@ export default function PaymentSuccessPage() {
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (password !== confirm) { setError('Les mots de passe ne correspondent pas.'); return; }
-    const err = await register(email.trim(), password, plan);
+    const err = await register(verifiedEmail, password, sessionId);
     if (err) { setError(err); return; }
     setDone(true);
   };
@@ -46,11 +75,38 @@ export default function PaymentSuccessPage() {
   const circumference = 2 * Math.PI * 28;
   const progress = circumference * (1 - countdown / 30);
 
+  if (checking) {
+    return (
+      <div style={{ minHeight: '100vh', background: '#0a0a0a', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+        <p style={{ color: '#666', fontSize: 14 }}>Vérification du paiement…</p>
+      </div>
+    );
+  }
+
+  if (sessionError) {
+    return (
+      <div style={{ minHeight: '100vh', background: '#0a0a0a', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 24 }}>
+        <div style={{ maxWidth: 440, width: '100%', textAlign: 'center' }}>
+          <div style={{ width: 80, height: 80, borderRadius: '50%', background: 'rgba(248,113,113,0.08)', border: '2px solid rgba(248,113,113,0.2)', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 24px' }}>
+            <XCircle size={40} color="#f87171" />
+          </div>
+          <h1 style={{ color: '#fff', fontSize: 24, fontWeight: 900, margin: '0 0 12px' }}>Paiement non confirmé</h1>
+          <p style={{ color: '#666', fontSize: 14, lineHeight: 1.6, margin: '0 0 28px' }}>{sessionError}</p>
+          <button
+            onClick={() => navigate('/pricing')}
+            style={{ padding: '13px 28px', borderRadius: 12, background: 'linear-gradient(135deg, #c9a84c, #a8823a)', border: 'none', color: '#000', fontWeight: 800, fontSize: 14, cursor: 'pointer' }}
+          >
+            Voir les tarifs
+          </button>
+        </div>
+      </div>
+    );
+  }
+
   if (done) {
     return (
       <div style={{ minHeight: '100vh', background: '#0a0a0a', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 24 }}>
         <div style={{ maxWidth: 440, width: '100%', textAlign: 'center' }}>
-          {/* Icône succès */}
           <div style={{ width: 80, height: 80, borderRadius: '50%', background: 'rgba(74,222,128,0.1)', border: '2px solid rgba(74,222,128,0.3)', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 20px' }}>
             <CheckCircle size={40} color="#4ade80" />
           </div>
@@ -62,7 +118,6 @@ export default function PaymentSuccessPage() {
           </p>
           <p style={{ color: '#555', fontSize: 13, margin: '0 0 28px' }}>Tous les modules sont débloqués.</p>
 
-          {/* Countdown circulaire */}
           <div style={{ position: 'relative', width: 80, height: 80, margin: '0 auto 20px' }}>
             <svg width="80" height="80" style={{ transform: 'rotate(-90deg)' }}>
               <circle cx="40" cy="40" r="28" fill="none" stroke="#1a1a1a" strokeWidth="4" />
@@ -98,7 +153,6 @@ export default function PaymentSuccessPage() {
   return (
     <div style={{ minHeight: '100vh', background: '#0a0a0a', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 24 }}>
       <div style={{ maxWidth: 420, width: '100%' }}>
-        {/* Bandeau confirmation */}
         <div style={{ display: 'flex', alignItems: 'center', gap: 10, background: 'rgba(74,222,128,0.08)', border: '1px solid rgba(74,222,128,0.2)', borderRadius: 12, padding: '12px 16px', marginBottom: 20 }}>
           <CheckCircle size={17} color="#4ade80" />
           <div>
@@ -115,19 +169,17 @@ export default function PaymentSuccessPage() {
             <h1 style={{ color: '#fff', fontSize: 20, fontWeight: 900, margin: 0 }}>Créer ton compte</h1>
           </div>
           <p style={{ color: '#555', fontSize: 13, margin: '0 0 22px' }}>
-            Choisis un email et un mot de passe pour te reconnecter lors de tes prochaines visites.
+            Choisis un mot de passe pour te reconnecter lors de tes prochaines visites.
           </p>
 
           <form onSubmit={handleSubmit}>
             <div style={{ marginBottom: 14 }}>
               <label style={{ color: '#666', fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: 1, display: 'block', marginBottom: 7 }}>
-                Adresse email
+                Adresse email (vérifiée via Stripe)
               </label>
               <input
-                type="email" required value={email}
-                onChange={e => setEmail(e.target.value)}
-                placeholder="exemple@email.com"
-                style={{ width: '100%', padding: '11px 13px', background: '#0a0a0a', border: '1px solid #2a2a2a', borderRadius: 9, color: '#fff', fontSize: 14, outline: 'none', boxSizing: 'border-box' }}
+                type="email" value={verifiedEmail} disabled
+                style={{ width: '100%', padding: '11px 13px', background: '#0a0a0a', border: '1px solid #2a2a2a', borderRadius: 9, color: '#888', fontSize: 14, outline: 'none', boxSizing: 'border-box' }}
               />
             </div>
 
@@ -149,7 +201,6 @@ export default function PaymentSuccessPage() {
               </div>
             </div>
 
-            {/* Indicateurs mot de passe */}
             {password.length > 0 && (
               <div style={{ display: 'flex', gap: 7, flexWrap: 'wrap', marginBottom: 14 }}>
                 {rules.map(r => (

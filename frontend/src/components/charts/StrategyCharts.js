@@ -1,11 +1,13 @@
 import React, { useState } from 'react';
 import { useLang } from '../../contexts/LanguageContext';
+import { useGame } from '../../contexts/GameContext';
 import {
   basicStrategyHardENHCS17,
   basicStrategyHardENHCH17,
   basicStrategySoftENHCS17,
   basicStrategySoftENHCH17,
-  basicStrategyPairsENHC,
+  basicStrategyPairsENHCDAS,
+  basicStrategyPairsENHCNoDAS,
   deviationsS17,
   deviationsH17,
   surrenderDeviationsS17,
@@ -30,7 +32,7 @@ const CELL_COLORS = {
 const ENHC_DIFF_HARD = new Set(['10-10','10-A','11-A','5,5-10','5,5-A']);
 // Case qui diffère entre S17 et H17
 const H17_DIFF_HARD = new Set(['17-A']);
-const H17_DIFF_SOFT = new Set(['A,6-2']);
+const H17_DIFF_SOFT = new Set(['A,6-2', 'A,7-2', 'A,8-6']);
 
 // ─── Composants de base ───────────────────────────────────────────────────────
 function Cell({ action, isEnhcDiff = false, isH17Diff = false }) {
@@ -172,13 +174,15 @@ export function SoftChart({ isS17 }) {
 const PAIR_ORDER = ['A,A','10,10','9,9','8,8','7,7','6,6','5,5','4,4','3,3','2,2'];
 
 export function PairsChart() {
+  const { tableRules } = useGame();
+  const pairsTable = tableRules?.doubleAfterSplit ? basicStrategyPairsENHCDAS : basicStrategyPairsENHCNoDAS;
   return (
     <div style={{ overflowX: 'auto' }}>
       <table style={{ borderCollapse: 'separate', borderSpacing: '0 1px' }}>
         <thead><ChartHeader /></thead>
         <tbody>
           {PAIR_ORDER.map(pair => {
-            const actions = basicStrategyPairsENHC[pair] || {};
+            const actions = pairsTable[pair] || {};
             return (
               <tr key={pair}>
                 <td style={{ padding: '2px 8px 2px 2px', color: '#e0e0e0', fontSize: 11, fontWeight: 700 }}>{pair}</td>
@@ -365,8 +369,8 @@ export function DeviationsChart({ isS17 }) {
   const devs    = isS17 ? deviationsS17     : deviationsH17;
   const surDevs = isS17 ? surrenderDeviationsS17 : surrenderDeviationsH17;
 
-  const upDevs   = devs.filter(d => d.playerHand !== 'Assurance' && !d.action.includes('au lieu de Rester'));
-  const downDevs = devs.filter(d => d.action.includes('au lieu de Rester'));
+  const upDevs   = devs.filter(d => d.playerHand !== 'Assurance' && d.trueCount >= 0);
+  const downDevs = devs.filter(d => d.playerHand !== 'Assurance' && d.trueCount < 0);
 
   // Assurance séparé
   const insurance = devs.find(d => d.playerHand === 'Assurance');
@@ -494,7 +498,9 @@ export function DeviationsChart({ isS17 }) {
                   <td style={{ ...TD_BASE, color: '#666', fontSize: 11 }}>
                     {d.playerHand === '8,8' ? t('charts_legend_split') : d.playerHand === '15' || d.playerHand === '14' ? `${t('charts_legend_hit')} / ${t('charts_legend_stand')}` : t('charts_legend_hit')}
                   </td>
-                  <td style={{ ...TD_BASE, color: '#fca5a5', fontWeight: 600, fontSize: 11 }}>{t('charts_legend_surr')}</td>
+                  <td style={{ ...TD_BASE, color: '#fca5a5', fontWeight: 600, fontSize: 11 }}>
+                    {d.action.includes('Séparer') ? t('charts_legend_split') : t('charts_legend_surr')}
+                  </td>
                   <td style={TD_BASE}><SurrenderBadge tc={d.trueCount} /></td>
                 </tr>
               );

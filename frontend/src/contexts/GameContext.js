@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useReducer, useCallback } from 'react';
+import React, { createContext, useContext, useReducer, useCallback, useEffect } from 'react';
 import {
   defaultPlayerSettings,
   defaultBetSpread,
@@ -46,7 +46,10 @@ const initialState = {
   frozenBets: false,
   showModal: null,
   // Saved templates
-  savedTemplates: []
+  savedTemplates: (() => {
+    try { return JSON.parse(localStorage.getItem('bj_templates') || '[]'); }
+    catch { return []; }
+  })()
 };
 
 function gameReducer(state, action) {
@@ -242,6 +245,10 @@ export function GameProvider({ children }) {
   const resetToDefaults = useCallback(() => {
     dispatch({ type: 'RESET_TO_DEFAULTS' });
   }, []);
+
+  useEffect(() => {
+    localStorage.setItem('bj_templates', JSON.stringify(state.savedTemplates));
+  }, [state.savedTemplates]);
   
   const value = {
     ...state,

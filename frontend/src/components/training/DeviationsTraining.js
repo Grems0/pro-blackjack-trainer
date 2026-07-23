@@ -5,6 +5,7 @@ import { ArrowLeft, RotateCcw, BookOpen, X, RefreshCw, Info } from 'lucide-react
 import { useGame } from '../../contexts/GameContext';
 import { useLang } from '../../contexts/LanguageContext';
 import PlayingCard from '../game/PlayingCard';
+import CasinoTable from '../game/CasinoTable';
 import StrategyCharts from '../charts/StrategyCharts';
 import {
   deviationsS17, deviationsH17,
@@ -420,13 +421,17 @@ export default function DeviationsTraining() {
         </div>
 
         {/* Carte principale */}
-        <div className="bg-gradient-to-b from-green-800/50 to-green-900/50 rounded-2xl p-8 border border-amber-700/30">
+        <CasinoTable
+          inscription="Blackjack pays 3:2"
+          subline={isS17 ? 'Dealer must stand on 17' : 'Dealer hits soft 17'}
+          glow={feedback?.type === 'correct'}
+        >
 
           {/* Croupier */}
-          <div className="text-center mb-8">
+          <div className="text-center mb-8 mt-6">
             <span className="text-gray-400 text-xs uppercase tracking-widest">{t('dev_dealer_card')}</span>
             <div className="flex justify-center mt-3">
-              {dealerCardObj && <PlayingCard card={dealerCardObj} size="lg" />}
+              {dealerCardObj && <PlayingCard key={`d-${dealerCardObj.value}${dealerCardObj.suit}`} card={dealerCardObj} size="lg" dealt />}
             </div>
           </div>
 
@@ -454,7 +459,7 @@ export default function DeviationsTraining() {
             </div>
             <div className="flex justify-center gap-3">
               {playerCards.map((card, idx) => (
-                <PlayingCard key={idx} card={card} size="lg" />
+                <PlayingCard key={`${card.value}${card.suit}${idx}`} card={card} size="lg" dealt dealIndex={idx + 1} />
               ))}
             </div>
             <p className="text-white font-bold mt-3">{scenario?.playerHand}</p>
@@ -621,7 +626,7 @@ export default function DeviationsTraining() {
               </button>
             </div>
           )}
-        </div>
+        </CasinoTable>
       </main>
     </div>
   );
