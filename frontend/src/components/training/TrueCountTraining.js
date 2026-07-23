@@ -725,7 +725,7 @@ export default function TrueCountTraining() {
     const expectedTC  = applyTC(rc, est, tcMethod);
     setScenario({ rc, cardsInTray, exactDecksRemaining: exact, estimatedDecks: est, exactTC, expectedTC, step });
     setUserAnswer(0);
-  }, [step, tcMethod]);
+  }, [step, tcMethod, totalCards]);
 
   useEffect(() => { generate(); }, [generate]);
 

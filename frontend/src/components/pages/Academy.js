@@ -110,10 +110,10 @@ export default function Academy() {
   useEffect(() => {
     const handler = () => {
       const scrollY = window.scrollY + 120;
-      for (let i = SECTIONS.length - 1; i >= 0; i--) {
-        const el = document.getElementById(SECTIONS[i].id);
+      for (let i = SECTION_IDS.length - 1; i >= 0; i--) {
+        const el = document.getElementById(SECTION_IDS[i]);
         if (el && el.offsetTop <= scrollY) {
-          setActiveSection(SECTIONS[i].id);
+          setActiveSection(SECTION_IDS[i]);
           break;
         }
       }
