@@ -7,10 +7,13 @@ from jose import JWTError, jwt
 from passlib.context import CryptContext
 import os
 import logging
+import secrets
 import stripe
 from pathlib import Path
 from pydantic import BaseModel, EmailStr
 from datetime import datetime, timezone, timedelta
+
+REFERRAL_BONUS_DAYS = 30
 
 ROOT_DIR = Path(__file__).parent
 load_dotenv(ROOT_DIR / '.env')
@@ -52,6 +55,15 @@ def make_token(email: str) -> str:
 def decode_token(token: str) -> str:
     payload = jwt.decode(token, JWT_SECRET, algorithms=[JWT_ALGORITHM])
     return payload['sub']
+
+async def generate_referral_code() -> str:
+    """Génère un code de parrainage court et unique."""
+    for _ in range(10):
+        code = secrets.token_urlsafe(4).replace('_', '').replace('-', '')[:6].upper()
+        if not await db.users.find_one({'referral_code': code}):
+            return code
+    return secrets.token_hex(4).upper()
+
 
 async def current_user(creds: HTTPAuthorizationCredentials = Depends(bearer)):
     if not creds:
@@ -135,25 +147,51 @@ async def register(body: RegisterBody):
     price_id   = line_items.data[0].price.id if line_items.data else ''
     plan       = 'annual' if price_id == PRICE_ANNUAL else 'monthly'
     days       = 365 if plan == 'annual' else 30
-    expiry     = datetime.now(timezone.utc) + timedelta(days=days)
+
+    # Bonus de parrainage : le code voyage via client_reference_id du lien Stripe.
+    # Le filleul ET le parrain reçoivent chacun REFERRAL_BONUS_DAYS de plus.
+    referral_used = None
+    ref_code = (getattr(session, 'client_reference_id', None) or '').strip().upper()
+    if ref_code:
+        referrer = await db.users.find_one({'referral_code': ref_code})
+        if referrer and referrer['email'] != body.email.lower():
+            days += REFERRAL_BONUS_DAYS
+            referral_used = ref_code
+
+            referrer_expiry = datetime.fromisoformat(referrer['expiry_date'])
+            if referrer_expiry.tzinfo is None:
+                referrer_expiry = referrer_expiry.replace(tzinfo=timezone.utc)
+            base = max(referrer_expiry, datetime.now(timezone.utc))
+            new_referrer_expiry = base + timedelta(days=REFERRAL_BONUS_DAYS)
+            await db.users.update_one(
+                {'email': referrer['email']},
+                {'$set': {'expiry_date': new_referrer_expiry.isoformat()}}
+            )
+
+    expiry = datetime.now(timezone.utc) + timedelta(days=days)
+    own_referral_code = await generate_referral_code()
 
     hashed = pwd_ctx.hash(body.password)
     await db.users.insert_one({
-        'email':        body.email.lower(),
-        'password':     hashed,
-        'plan':         plan,
-        'subscribed_at': datetime.now(timezone.utc).isoformat(),
-        'expiry_date':  expiry.isoformat(),
+        'email':          body.email.lower(),
+        'password':       hashed,
+        'plan':           plan,
+        'subscribed_at':  datetime.now(timezone.utc).isoformat(),
+        'expiry_date':    expiry.isoformat(),
         'stripe_customer': session.customer,
         'stripe_session':  body.session_id,
+        'referral_code':  own_referral_code,
+        'referred_by':    referral_used,
     })
 
     token = make_token(body.email.lower())
     return {
-        'token':      token,
-        'email':      body.email.lower(),
-        'plan':       plan,
-        'expiry_date': expiry.isoformat(),
+        'token':          token,
+        'email':          body.email.lower(),
+        'plan':           plan,
+        'expiry_date':    expiry.isoformat(),
+        'referral_code':  own_referral_code,
+        'referral_bonus_applied': referral_used is not None,
     }
 
 
@@ -172,6 +210,11 @@ async def login(body: LoginBody):
         expiry = expiry.replace(tzinfo=timezone.utc)
     is_active = expiry > datetime.now(timezone.utc)
 
+    referral_code = user.get('referral_code')
+    if not referral_code:
+        referral_code = await generate_referral_code()
+        await db.users.update_one({'email': user['email']}, {'$set': {'referral_code': referral_code}})
+
     token = make_token(user['email'])
     return {
         'token':      token,
@@ -179,6 +222,7 @@ async def login(body: LoginBody):
         'plan':       user.get('plan', ''),
         'expiry_date': user['expiry_date'],
         'is_active':  is_active,
+        'referral_code': referral_code,
     }
 
 
@@ -187,11 +231,18 @@ async def me(user=Depends(current_user)):
     expiry = datetime.fromisoformat(user['expiry_date'])
     if expiry.tzinfo is None:
         expiry = expiry.replace(tzinfo=timezone.utc)
+
+    referral_code = user.get('referral_code')
+    if not referral_code:
+        referral_code = await generate_referral_code()
+        await db.users.update_one({'email': user['email']}, {'$set': {'referral_code': referral_code}})
+
     return {
         'email':      user['email'],
         'plan':       user.get('plan', ''),
         'expiry_date': user['expiry_date'],
         'is_active':  expiry > datetime.now(timezone.utc),
+        'referral_code': referral_code,
     }
 
 

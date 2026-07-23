@@ -60,12 +60,14 @@ export function AuthProvider({ children }) {
 
     const hashedLocal = await hashPassword(password);
     const u = {
-      email:        data.email,
-      password:     hashedLocal,
-      plan:         data.plan,
-      subscribedAt: new Date().toISOString(),
-      expiryDate:   data.expiry_date,
-      token:        data.token,
+      email:                  data.email,
+      password:               hashedLocal,
+      plan:                   data.plan,
+      subscribedAt:           new Date().toISOString(),
+      expiryDate:             data.expiry_date,
+      token:                  data.token,
+      referralCode:           data.referral_code,
+      referralBonusApplied:   data.referral_bonus_applied,
     };
     saveLocal(u);
     setUser(u);
@@ -88,11 +90,12 @@ export function AuthProvider({ children }) {
       if (!res.ok) return data.detail || 'Email ou mot de passe incorrect.';
 
       const u = {
-        email:      data.email,
-        password:   hashedLocal,
-        plan:       data.plan,
-        expiryDate: data.expiry_date,
-        token:      data.token,
+        email:        data.email,
+        password:     hashedLocal,
+        plan:         data.plan,
+        expiryDate:   data.expiry_date,
+        token:        data.token,
+        referralCode: data.referral_code,
       };
       saveLocal(u);
       setUser(u);

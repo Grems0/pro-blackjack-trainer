@@ -211,16 +211,35 @@ export default function PricingPage() {
     annual:  'https://buy.stripe.com/14A9AS8mRcRI1SE86tenS02',
   };
 
+  // Code de parrainage transmis dans l'URL (ex. /pricing?ref=AB12CD) — on le
+  // relaie à Stripe via client_reference_id, récupéré côté serveur à l'inscription.
+  const referralCode = new URLSearchParams(window.location.search).get('ref');
+
   const handleSubscribe = (plan) => {
     // Retour visuel immédiat : la redirection vers buy.stripe.com prend
     // parfois une seconde, sans ce flag le bouton semblait ne rien faire.
     setLoading(true);
-    window.location.href = PAYMENT_LINKS[plan];
+    let url = PAYMENT_LINKS[plan];
+    if (referralCode) {
+      url += `?client_reference_id=${encodeURIComponent(referralCode)}`;
+    }
+    window.location.href = url;
   };
 
   return (
     <div style={{ minHeight: '100vh', background: '#0a0a0a' }}>
       <Header />
+
+      {referralCode && (
+        <div style={{ textAlign: 'center', padding: '16px 24px 0' }}>
+          <div style={{ display: 'inline-flex', alignItems: 'center', gap: 8, background: 'rgba(74,222,128,0.08)', border: '1px solid rgba(74,222,128,0.25)', borderRadius: 12, padding: '10px 18px' }}>
+            <span style={{ fontSize: 16 }}>🎁</span>
+            <span style={{ color: '#4ade80', fontSize: 13, fontWeight: 700 }}>
+              Tu as un lien de parrainage : toi et ton ami recevrez chacun 1 mois offert à l'inscription.
+            </span>
+          </div>
+        </div>
+      )}
 
       {/* Hero */}
       <div style={{ textAlign: 'center', padding: '64px 24px 48px' }}>
@@ -257,6 +276,20 @@ export default function PricingPage() {
       <div style={{ display: 'flex', justifyContent: 'center', gap: 16, padding: '0 24px 64px', flexWrap: 'wrap', maxWidth: 960, margin: '0 auto' }}>
         <FreeCard />
         <PlanCard billing={billing} onSubscribe={handleSubscribe} loading={loading} />
+      </div>
+
+      {/* Éléments de confiance */}
+      <div style={{ display: 'flex', justifyContent: 'center', gap: 28, flexWrap: 'wrap', padding: '0 24px 56px', maxWidth: 820, margin: '0 auto' }}>
+        {[
+          { icon: '🔒', text: 'Paiement sécurisé par Stripe' },
+          { icon: '↩️', text: 'Résiliable à tout moment' },
+          { icon: '📊', text: 'Basé sur la stratégie Hi-Lo, méthode de comptage reconnue' },
+        ].map((f) => (
+          <div key={f.text} style={{ display: 'flex', alignItems: 'center', gap: 8, maxWidth: 220 }}>
+            <span style={{ fontSize: 16 }}>{f.icon}</span>
+            <span style={{ color: '#666', fontSize: 12.5, lineHeight: 1.4 }}>{f.text}</span>
+          </div>
+        ))}
       </div>
 
       {error && (

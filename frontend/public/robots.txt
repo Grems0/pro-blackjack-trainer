@@ -1,0 +1,7 @@
+User-agent: *
+Allow: /
+Disallow: /academy
+Disallow: /charts
+Disallow: /payment/
+
+Sitemap: https://pro-blackjack-trainer.vercel.app/sitemap.xml

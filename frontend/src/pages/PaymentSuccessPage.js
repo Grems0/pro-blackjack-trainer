@@ -8,7 +8,7 @@ const PLAN_LABELS = { monthly: 'mensuel', annual: 'annuel' };
 const PLAN_DURATIONS = { monthly: '30 jours', annual: '1 an' };
 
 export default function PaymentSuccessPage() {
-  const { register } = useAuth();
+  const { register, user } = useAuth();
   const navigate = useNavigate();
 
   // La session Stripe est la SEULE preuve de paiement acceptée — jamais une valeur
@@ -26,6 +26,7 @@ export default function PaymentSuccessPage() {
   const [error, setError] = useState(null);
   const [done, setDone] = useState(false);
   const [countdown, setCountdown] = useState(30);
+  const [copied, setCopied] = useState(false);
 
   // Vérification côté serveur du paiement Stripe avant d'afficher quoi que ce soit
   useEffect(() => {
@@ -116,7 +117,41 @@ export default function PaymentSuccessPage() {
             Ton abonnement <strong style={{ color: '#c9a84c' }}>Pro {PLAN_LABELS[plan]}</strong> est actif pour{' '}
             <strong style={{ color: '#fff' }}>{PLAN_DURATIONS[plan]}</strong>.
           </p>
-          <p style={{ color: '#555', fontSize: 13, margin: '0 0 28px' }}>Tous les modules sont débloqués.</p>
+          <p style={{ color: '#555', fontSize: 13, margin: '0 0 6px' }}>Tous les modules sont débloqués.</p>
+          {user?.referralBonusApplied && (
+            <p style={{ color: '#4ade80', fontSize: 13, margin: '0 0 20px', fontWeight: 700 }}>
+              🎁 +1 mois offert grâce au parrainage !
+            </p>
+          )}
+
+          {user?.referralCode && (
+            <div style={{ background: '#111', border: '1px solid #1e1e1e', borderRadius: 14, padding: '16px 18px', margin: '0 0 28px', textAlign: 'left' }}>
+              <p style={{ color: '#c9a84c', fontSize: 12, fontWeight: 800, margin: '0 0 4px', textTransform: 'uppercase', letterSpacing: 0.5 }}>
+                🎁 Parraine un ami
+              </p>
+              <p style={{ color: '#666', fontSize: 12.5, margin: '0 0 10px', lineHeight: 1.5 }}>
+                Partage ton lien : vous recevez chacun <strong style={{ color: '#fff' }}>1 mois offert</strong> quand il s'abonne.
+              </p>
+              <div style={{ display: 'flex', gap: 8 }}>
+                <input
+                  readOnly
+                  value={`${window.location.origin}/pricing?ref=${user.referralCode}`}
+                  onClick={(e) => e.target.select()}
+                  style={{ flex: 1, padding: '9px 11px', background: '#0a0a0a', border: '1px solid #2a2a2a', borderRadius: 8, color: '#999', fontSize: 12, outline: 'none' }}
+                />
+                <button
+                  onClick={() => {
+                    navigator.clipboard.writeText(`${window.location.origin}/pricing?ref=${user.referralCode}`);
+                    setCopied(true);
+                    setTimeout(() => setCopied(false), 2000);
+                  }}
+                  style={{ padding: '9px 16px', borderRadius: 8, background: copied ? 'rgba(74,222,128,0.15)' : 'linear-gradient(135deg, #c9a84c, #a8823a)', border: copied ? '1px solid rgba(74,222,128,0.4)' : 'none', color: copied ? '#4ade80' : '#000', fontWeight: 800, fontSize: 12, cursor: 'pointer', whiteSpace: 'nowrap' }}
+                >
+                  {copied ? '✓ Copié' : 'Copier'}
+                </button>
+              </div>
+            </div>
+          )}
 
           <div style={{ position: 'relative', width: 80, height: 80, margin: '0 auto 20px' }}>
             <svg width="80" height="80" style={{ transform: 'rotate(-90deg)' }}>

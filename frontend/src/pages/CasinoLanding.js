@@ -55,12 +55,19 @@ function EntranceScene({ onChoose }) {
         transition: 'all 1s ease 0.4s',
         pointerEvents: 'none',
       }}>
-        <p style={{
+        <h1 style={{
           color: 'rgba(201,168,76,0.55)', fontSize: 10,
           letterSpacing: '0.45em', textTransform: 'uppercase',
-          fontFamily: 'Georgia, serif', margin: 0,
+          fontFamily: 'Georgia, serif', margin: 0, fontWeight: 400,
         }}>
-          Royal Casino • Las Vegas
+          Pro Blackjack Trainer — Royal Casino
+        </h1>
+        <p style={{
+          color: 'rgba(201,168,76,0.35)', fontSize: 9,
+          letterSpacing: '0.15em', textTransform: 'uppercase',
+          fontFamily: 'Georgia, serif', margin: '6px 0 0', maxWidth: 320, textAlign: 'center',
+        }}>
+          Apprends le comptage de cartes Hi-Lo et la stratégie de base au blackjack
         </p>
       </div>
 
