@@ -1,15 +1,51 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { BookOpen, BarChart3, Zap, LogIn, LogOut } from 'lucide-react';
+import { BookOpen, BarChart3, Zap, LogIn, LogOut, Gift, X } from 'lucide-react';
 import { useAuth, isProActive } from '../../contexts/AuthContext';
 import { useLang } from '../../contexts/LanguageContext';
 import LangPicker from '../ui/LangPicker';
+
+function ReferralModal({ code, onClose }) {
+  const [copied, setCopied] = useState(false);
+  const link = `${window.location.origin}/pricing?ref=${code}`;
+
+  return (
+    <div onClick={onClose} style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.7)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 100, padding: 24 }}>
+      <div onClick={(e) => e.stopPropagation()} style={{ background: '#111', border: '1px solid #1e1e1e', borderRadius: 18, padding: '24px 22px', maxWidth: 380, width: '100%', position: 'relative' }}>
+        <button onClick={onClose} style={{ position: 'absolute', top: 14, right: 14, background: 'none', border: 'none', cursor: 'pointer' }}>
+          <X size={18} color="#555" />
+        </button>
+        <p style={{ color: '#c9a84c', fontSize: 12, fontWeight: 800, margin: '0 0 4px', textTransform: 'uppercase', letterSpacing: 0.5 }}>
+          🎁 Parraine un ami
+        </p>
+        <p style={{ color: '#777', fontSize: 12.5, margin: '0 0 14px', lineHeight: 1.5 }}>
+          Partage ton lien : vous recevez chacun <strong style={{ color: '#fff' }}>1 mois offert</strong> quand il s'abonne.
+        </p>
+        <div style={{ display: 'flex', gap: 8 }}>
+          <input
+            readOnly
+            value={link}
+            onClick={(e) => e.target.select()}
+            style={{ flex: 1, padding: '9px 11px', background: '#0a0a0a', border: '1px solid #2a2a2a', borderRadius: 8, color: '#999', fontSize: 12, outline: 'none' }}
+          />
+          <button
+            onClick={() => { navigator.clipboard.writeText(link); setCopied(true); setTimeout(() => setCopied(false), 2000); }}
+            style={{ padding: '9px 16px', borderRadius: 8, background: copied ? 'rgba(74,222,128,0.15)' : 'linear-gradient(135deg, #c9a84c, #a8823a)', border: copied ? '1px solid rgba(74,222,128,0.4)' : 'none', color: copied ? '#4ade80' : '#000', fontWeight: 800, fontSize: 12, cursor: 'pointer', whiteSpace: 'nowrap' }}
+          >
+            {copied ? '✓ Copié' : 'Copier'}
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
 
 export default function Header() {
   const { user, logout } = useAuth();
   const navigate = useNavigate();
   const { t } = useLang();
   const isPro = user ? isProActive(user) : false;
+  const [showReferral, setShowReferral] = useState(false);
 
   const handleLogout = () => {
     logout();
@@ -45,6 +81,17 @@ export default function Header() {
             <BookOpen className="w-4 h-4 text-amber-500" />
             <span className="text-gray-300 text-sm font-semibold hidden sm:inline">{t('nav_academy')}</span>
           </Link>
+
+          {user && (
+            <button
+              onClick={() => setShowReferral(true)}
+              className="flex items-center gap-2 px-3 py-2 rounded-lg bg-gray-800 hover:bg-gray-700 transition-colors"
+              title="Parrainer un ami"
+            >
+              <Gift className="w-4 h-4 text-amber-500" />
+              <span className="text-gray-300 text-sm font-semibold hidden sm:inline">Parrainer</span>
+            </button>
+          )}
 
           {user ? (
             <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 2 }}>
@@ -98,6 +145,10 @@ export default function Header() {
           )}
         </div>
       </div>
+
+      {showReferral && user?.referralCode && (
+        <ReferralModal code={user.referralCode} onClose={() => setShowReferral(false)} />
+      )}
     </header>
   );
 }
