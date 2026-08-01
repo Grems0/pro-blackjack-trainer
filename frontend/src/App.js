@@ -18,6 +18,9 @@ import PaymentSuccessPage from "./pages/PaymentSuccessPage";
 import PaymentCancelPage from "./pages/PaymentCancelPage";
 import LoginPage from "./pages/LoginPage";
 import ProRoute from "./components/routing/ProRoute";
+import TermsPage from "./pages/legal/TermsPage";
+import PrivacyPage from "./pages/legal/PrivacyPage";
+import LegalNoticePage from "./pages/legal/LegalNoticePage";
 
 function App() {
   return (
@@ -33,6 +36,9 @@ function App() {
               <Route path="/pricing" element={<PricingPage />} />
               <Route path="/payment/success" element={<PaymentSuccessPage />} />
               <Route path="/payment/cancel" element={<PaymentCancelPage />} />
+              <Route path="/cgv" element={<TermsPage />} />
+              <Route path="/confidentialite" element={<PrivacyPage />} />
+              <Route path="/mentions-legales" element={<LegalNoticePage />} />
 
               {/* Routes Pro — nécessitent un compte */}
               <Route path="/charts" element={<ProRoute><ChartsPage /></ProRoute>} />

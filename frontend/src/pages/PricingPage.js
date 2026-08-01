@@ -4,7 +4,7 @@ import Header from '../components/layout/Header';
 import { useLang } from '../contexts/LanguageContext';
 import { Check, X, Zap, Crown, ChevronDown, ChevronUp } from 'lucide-react';
 
-function PlanCard({ billing, onSubscribe, loading }) {
+function PlanCard({ billing, onSubscribe, loading, canSubscribe }) {
   const { t } = useLang();
   const isAnnual = billing === 'annual';
   const monthlyPrice = 12.99;
@@ -76,12 +76,13 @@ function PlanCard({ billing, onSubscribe, loading }) {
         {/* CTA */}
         <button
           onClick={() => onSubscribe(isAnnual ? 'annual' : 'monthly')}
-          disabled={loading}
+          disabled={loading || !canSubscribe}
+          title={!canSubscribe ? "Coche la case ci-dessous pour continuer" : undefined}
           style={{
             width: '100%', padding: '14px', borderRadius: 12,
-            background: loading ? '#333' : 'linear-gradient(135deg, #c9a84c, #a8823a)',
-            border: 'none', color: '#000', fontWeight: 800, fontSize: 15,
-            cursor: loading ? 'not-allowed' : 'pointer',
+            background: (loading || !canSubscribe) ? '#333' : 'linear-gradient(135deg, #c9a84c, #a8823a)',
+            border: 'none', color: canSubscribe ? '#000' : '#777', fontWeight: 800, fontSize: 15,
+            cursor: (loading || !canSubscribe) ? 'not-allowed' : 'pointer',
             transition: 'opacity .15s', letterSpacing: 0.3,
             marginBottom: 20,
           }}
@@ -199,6 +200,7 @@ export default function PricingPage() {
   const [billing, setBilling] = useState('annual'); // 'monthly' | 'annual'
   const [loading,  setLoading]  = useState(false);
   const [error,    setError]    = useState(null);
+  const [agreed,   setAgreed]   = useState(false);
 
   const FEATURES = Array.from({ length: 10 }, (_, i) => ({
     label: t(`pricing_feat_${i + 1}`),
@@ -273,9 +275,29 @@ export default function PricingPage() {
       </div>
 
       {/* Plans */}
-      <div style={{ display: 'flex', justifyContent: 'center', gap: 16, padding: '0 24px 64px', flexWrap: 'wrap', maxWidth: 960, margin: '0 auto' }}>
+      <div style={{ display: 'flex', justifyContent: 'center', gap: 16, padding: '0 24px 12px', flexWrap: 'wrap', maxWidth: 960, margin: '0 auto' }}>
         <FreeCard />
-        <PlanCard billing={billing} onSubscribe={handleSubscribe} loading={loading} />
+        <PlanCard billing={billing} onSubscribe={handleSubscribe} loading={loading} canSubscribe={agreed} />
+      </div>
+
+      {/* Case obligatoire : CGV + renonciation au droit de rétractation de 14 jours,
+          requise pour donner un effet légal à la politique de non-remboursement (art. L221-28 Code conso). */}
+      <div id="cgv-checkbox" style={{ maxWidth: 420, margin: '0 auto', padding: '0 24px 52px' }}>
+        <label style={{ display: 'flex', alignItems: 'flex-start', gap: 10, cursor: 'pointer' }}>
+          <input
+            type="checkbox"
+            checked={agreed}
+            onChange={(e) => setAgreed(e.target.checked)}
+            style={{ marginTop: 3, width: 16, height: 16, flexShrink: 0, accentColor: '#c9a84c' }}
+          />
+          <span style={{ color: '#666', fontSize: 12, lineHeight: 1.6 }}>
+            J'ai lu et j'accepte les{' '}
+            <Link to="/cgv" target="_blank" style={{ color: '#c9a84c', textDecoration: 'underline' }}>Conditions Générales de Vente</Link>.
+            Je demande l'accès immédiat au service dès la souscription et je renonce expressément à mon droit de
+            rétractation de 14 jours (article L221-28 du Code de la consommation) une fois cet accès activé —
+            aucun remboursement ne sera possible après le début de l'accès.
+          </span>
+        </label>
       </div>
 
       {/* Éléments de confiance */}
@@ -338,12 +360,28 @@ export default function PricingPage() {
             {t('pricing_try_free')}
           </Link>
           <button
-            onClick={() => handleSubscribe(billing === 'annual' ? 'annual' : 'monthly')}
+            onClick={() => {
+              if (!agreed) {
+                document.getElementById('cgv-checkbox')?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                return;
+              }
+              handleSubscribe(billing === 'annual' ? 'annual' : 'monthly');
+            }}
             disabled={loading}
-            style={{ padding: '12px 28px', borderRadius: 12, background: 'linear-gradient(135deg, #c9a84c, #a8823a)', border: 'none', color: '#000', fontWeight: 800, fontSize: 14, cursor: loading ? 'not-allowed' : 'pointer' }}
+            title={!agreed ? "Accepte les CGV plus haut pour continuer" : undefined}
+            style={{ padding: '12px 28px', borderRadius: 12, background: (loading || !agreed) ? '#333' : 'linear-gradient(135deg, #c9a84c, #a8823a)', border: 'none', color: agreed ? '#000' : '#777', fontWeight: 800, fontSize: 14, cursor: loading ? 'not-allowed' : 'pointer' }}
           >
             {loading ? t('pricing_loading') : t('pricing_start_pro')}
           </button>
+        </div>
+      </div>
+
+      {/* Pied de page légal */}
+      <div style={{ textAlign: 'center', padding: '0 24px 40px' }}>
+        <div style={{ display: 'flex', gap: 16, justifyContent: 'center', flexWrap: 'wrap' }}>
+          <Link to="/cgv" style={{ color: '#444', fontSize: 12, textDecoration: 'none' }}>CGV</Link>
+          <Link to="/confidentialite" style={{ color: '#444', fontSize: 12, textDecoration: 'none' }}>Confidentialité</Link>
+          <Link to="/mentions-legales" style={{ color: '#444', fontSize: 12, textDecoration: 'none' }}>Mentions légales</Link>
         </div>
       </div>
     </div>
